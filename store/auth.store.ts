@@ -20,8 +20,10 @@ interface AuthState {
   refreshToken: string | null
   user: AuthUser | null
   isAuthenticated: boolean
+  _hasHydrated: boolean
   setTokens: (tokens: Partial<Tokens>) => void
   setUser: (user: AuthUser) => void
+  setHasHydrated: (val: boolean) => void
   logout: () => void
 }
 
@@ -33,9 +35,11 @@ export const useAuthStore = create<AuthState>()(
       refreshToken: null,
       user: null,
       isAuthenticated: false,
+      _hasHydrated: false,
 
       setTokens: (tokens) => set({ ...tokens, isAuthenticated: true }),
       setUser: (user) => set({ user }),
+      setHasHydrated: (val) => set({ _hasHydrated: val }),
       logout: () =>
         set({
           idToken: null,
@@ -47,11 +51,15 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: "finance-auth",
+      onRehydrateStorage: () => (state) => {
+        state?.setHasHydrated(true)
+      },
       partialize: (s) => ({
         idToken: s.idToken,
         accessToken: s.accessToken,
         refreshToken: s.refreshToken,
         user: s.user,
+        isAuthenticated: s.isAuthenticated,
       }),
     }
   )

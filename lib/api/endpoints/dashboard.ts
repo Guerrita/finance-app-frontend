@@ -1,25 +1,21 @@
 import { apiClient } from "@/lib/api/client"
-import type { ApiResponse, TransactionSummary } from "@/types/api"
-
-export interface DashboardData {
-  month: string
-  summary: TransactionSummary
-  budget_progress: number
-  savings_rate: number
-  recent_transactions: {
-    id: string
-    type: "income" | "expense"
-    amount: number
-    description: string
-    category: string
-    date: string
-    currency: string
-  }[]
-  goals_summary: { active: number; total_saved: number }
-  sinking_funds_summary: { active: number; total_saved: number }
-}
+import type { ApiResponse, DashboardData } from "@/types/api"
+import { useQuery } from "@tanstack/react-query"
+import { QUERY_KEYS } from "@/lib/utils/constants"
 
 export const dashboardApi = {
-  get: (month: string) =>
-    apiClient.get<ApiResponse<DashboardData>>(`/dashboard/${month}`),
+  get: async (month: string): Promise<DashboardData> => {
+    const { data } = await apiClient.get<ApiResponse<DashboardData>>("/dashboard", {
+      params: { month },
+    })
+    if (!data.success) throw new Error(data.error.message)
+    return data.data
+  },
+}
+
+export function useDashboard(month: string) {
+  return useQuery({
+    queryKey: QUERY_KEYS.dashboard(month),
+    queryFn: () => dashboardApi.get(month),
+  })
 }

@@ -33,15 +33,22 @@ const step2Schema = z
 type Step1Values = z.infer<typeof step1Schema>
 type Step2Values = z.infer<typeof step2Schema>
 
-export function ForgotPasswordForm() {
+interface ForgotPasswordFormProps {
+  initialEmail?: string
+}
+
+export function ForgotPasswordForm({ initialEmail = '' }: ForgotPasswordFormProps) {
   const router = useRouter()
   const [step, setStep] = useState<1 | 2>(1)
-  const [email, setEmail] = useState('')
+  const [email, setEmail] = useState(initialEmail)
   const [serverError, setServerError] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
 
-  const form1 = useForm<Step1Values>({ resolver: zodResolver(step1Schema) })
+  const form1 = useForm<Step1Values>({
+    resolver: zodResolver(step1Schema),
+    defaultValues: { email: initialEmail },
+  })
   const form2 = useForm<Step2Values>({ resolver: zodResolver(step2Schema) })
 
   async function onStep1({ email }: Step1Values) {

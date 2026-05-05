@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
-import { ForgotPasswordForm } from '@/components/auth/ForgotPasswordForm'
+import { Suspense } from 'react'
+import { ForgotPasswordPageContent } from './ForgotPasswordPageContent'
 
 export const metadata: Metadata = { title: 'Recuperar contraseña — FinanceApp' }
 
@@ -12,7 +13,9 @@ export default function ForgotPasswordPage() {
           Te enviaremos un código para restablecer tu contraseña
         </p>
       </div>
-      <ForgotPasswordForm />
+      <Suspense>
+        <ForgotPasswordPageContent />
+      </Suspense>
     </div>
   )
 }

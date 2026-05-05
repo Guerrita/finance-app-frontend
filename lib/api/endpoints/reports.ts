@@ -1,26 +1,34 @@
 import { apiClient } from "@/lib/api/client"
-import type { ApiResponse } from "@/types/api"
-
-export interface MonthlyReport {
-  month: string
-  total_income: number
-  total_expenses: number
-  balance: number
-  savings_rate: number
-  by_category: { category: string; amount: number; percentage: number }[]
-}
-
-export interface YtdReport {
-  year: number
-  months: MonthlyReport[]
-  total_income: number
-  total_expenses: number
-  average_savings_rate: number
-}
+import type { ApiResponse, MonthlyReport, YtdReport } from "@/types/api"
+import { useQuery } from "@tanstack/react-query"
 
 export const reportsApi = {
-  monthly: (month: string) =>
-    apiClient.get<ApiResponse<MonthlyReport>>(`/reports/monthly/${month}`),
+  monthly: async (month: string) => {
+    const { data } = await apiClient.get<ApiResponse<MonthlyReport>>("/reports/monthly", {
+      params: { month },
+    })
+    if (!data.success) throw new Error(data.error.message)
+    return data.data
+  },
 
-  ytd: () => apiClient.get<ApiResponse<YtdReport>>("/reports/ytd"),
+  ytd: async () => {
+    const { data } = await apiClient.get<ApiResponse<YtdReport>>("/reports/year-to-date")
+    if (!data.success) throw new Error(data.error.message)
+    return data.data
+  },
+}
+
+export const useMonthlyReport = (month: string) => {
+  return useQuery({
+    queryKey: ["reports", "monthly", month],
+    queryFn: () => reportsApi.monthly(month),
+    enabled: !!month,
+  })
+}
+
+export const useYearToDateReport = () => {
+  return useQuery({
+    queryKey: ["reports", "ytd"],
+    queryFn: reportsApi.ytd,
+  })
 }

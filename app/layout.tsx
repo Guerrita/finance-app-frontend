@@ -3,8 +3,8 @@ import { Providers } from "@/components/Providers"
 import "./globals.css"
 
 export const metadata: Metadata = {
-  title: "FinanceApp",
-  description: "Controla tus finanzas personales",
+  title: "FinanceApp — Tus Finanzas Personales",
+  description: "Controla tus ingresos, gastos y metas de ahorro",
   applicationName: "FinanceApp",
   appleWebApp: {
     capable: true,

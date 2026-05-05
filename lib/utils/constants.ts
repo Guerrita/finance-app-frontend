@@ -16,12 +16,14 @@ export const QUERY_KEYS = {
 } as const
 
 export const ROUTES = {
-  login:        "/login",
-  register:     "/register",
-  dashboard:    "/dashboard",
-  transactions: "/transactions",
-  budget:       "/budget",
-  goals:        "/goals",
-  sinkingFunds: "/sinking-funds",
-  reports:      "/reports",
+  login:          "/login",
+  register:       "/register",
+  forgotPassword: "/forgot-password",
+  dashboard:      "/dashboard",
+  transactions:   "/transactions",
+  budget:         "/budget",
+  goals:          "/goals",
+  sinkingFunds:   "/sinking-funds",
+  reports:        "/reports",
+  settings:       "/settings",
 } as const

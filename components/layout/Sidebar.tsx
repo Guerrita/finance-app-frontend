@@ -10,7 +10,7 @@ import {
   Wallet,
   BarChart3,
   LogOut,
-  User,
+  Settings,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { ROUTES } from "@/lib/utils/constants"
@@ -77,17 +77,28 @@ export function Sidebar({ className }: SidebarProps) {
       {/* User section */}
       <div className="px-3 py-4 border-t border-white/10">
         {user && (
-          <div className="flex items-center gap-3 px-3 py-2 mb-4">
-            <div className="h-8 w-8 rounded-full bg-slate-800 flex items-center justify-center border border-white/10">
-              <User className="h-4 w-4 text-slate-400" />
+          <Link
+            href={ROUTES.settings}
+            className={cn(
+              "flex items-center gap-3 px-3 py-2 mb-2 rounded-md transition-colors",
+              "hover:bg-white/5",
+              pathname === ROUTES.settings && "bg-brand-600/20"
+            )}
+            aria-label="Ir a configuración de perfil"
+          >
+            <div className="h-8 w-8 rounded-full bg-brand-600 flex items-center justify-center shrink-0">
+              <span className="text-xs font-bold text-white select-none">
+                {user.name.trim().split(/\s+/).slice(0, 2).map((w: string) => w[0]?.toUpperCase() ?? "").join("")}
+              </span>
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-white truncate">{user.name}</p>
               <p className="text-xs text-slate-400 truncate">
-                {user.preferred_currency} • {user.email}
+                {user.preferred_currency} • configuración
               </p>
             </div>
-          </div>
+            <Settings className="h-3.5 w-3.5 text-slate-500 shrink-0" />
+          </Link>
         )}
         <button
           onClick={handleLogout}
