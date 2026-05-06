@@ -28,7 +28,7 @@ import { toast } from "sonner"
 
 const configSchema = z.object({
   currency: z.string().min(1),
-  monthly_income_goal: z.coerce.number().min(0),
+  monthly_income_goal: z.number().min(0),
   savings_rate_target: z.array(z.number()).or(z.number()),
 })
 
@@ -117,7 +117,12 @@ export function BudgetConfigTab() {
                 <FormItem>
                   <FormLabel>Meta de ingreso mensual</FormLabel>
                   <FormControl>
-                    <Input type="number" step="any" {...field} />
+                    <Input
+                      type="number"
+                      step="any"
+                      {...field}
+                      onChange={(e) => field.onChange(Number(e.target.value))}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

@@ -29,9 +29,9 @@ const sinkingFundSchema = z.object({
   description: z.string().optional(),
   expected_amount: z.number().min(0.01, "El monto debe ser mayor a 0"),
   expected_date: z.string().min(1, "La fecha es requerida"),
-  current_saved: z.number().default(0),
+  current_saved: z.number(),
   monthly_contribution: z.number().optional(),
-  currency: z.string().default("COP"),
+  currency: z.string(),
   recurrence: z.enum(["one-time", "monthly", "quarterly", "yearly"]),
 })
 

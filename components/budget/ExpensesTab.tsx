@@ -101,7 +101,7 @@ export function ExpensesTab() {
           </AccordionTrigger>
           <AccordionContent className="pt-2 pb-6 space-y-4">
             <div className="flex justify-end">
-              <Button size="sm" onClick={() => handleAdd("fixed")} gap={2}>
+              <Button size="sm" onClick={() => handleAdd("fixed")} className="gap-2">
                 <Plus size={16} />
                 Añadir gasto fijo
               </Button>
@@ -133,7 +133,7 @@ export function ExpensesTab() {
           </AccordionTrigger>
           <AccordionContent className="pt-2 pb-6 space-y-4">
             <div className="flex justify-end">
-              <Button size="sm" onClick={() => handleAdd("variable")} gap={2}>
+              <Button size="sm" onClick={() => handleAdd("variable")} className="gap-2">
                 <Plus size={16} />
                 Añadir gasto variable
               </Button>

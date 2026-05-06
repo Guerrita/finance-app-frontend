@@ -75,7 +75,7 @@ export function IncomeTab() {
           <p className="text-sm text-muted-foreground uppercase tracking-wider">Total Planificado</p>
           <h2 className="text-3xl font-bold">{formatCurrency(total)}</h2>
         </div>
-        <Button onClick={handleAdd} gap={2}>
+        <Button onClick={handleAdd} className="gap-2">
           <Plus size={18} />
           Añadir ingreso
         </Button>

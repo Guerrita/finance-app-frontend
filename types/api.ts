@@ -200,6 +200,12 @@ export interface DashboardAlert {
   action: string
 }
 
+export interface DashboardRecommendation {
+  type: string
+  message: string
+  potential_savings?: number
+}
+
 export interface DashboardData {
   month: string
   current_date: string
@@ -212,7 +218,7 @@ export interface DashboardData {
   sinking_funds_summary: DashboardSinkingFundsSummary
   alerts: DashboardAlert[]
   recent_transactions: Transaction[]
-  recommendations: string[]
+  recommendations: DashboardRecommendation[] | string[]
 }
 
 // Monthly Report

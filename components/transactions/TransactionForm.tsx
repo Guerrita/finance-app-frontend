@@ -28,7 +28,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { LoadingSpinner } from "@/components/shared/LoadingSpinner"
+import { Loader2 } from "lucide-react"
 import { Transaction } from "@/types/api"
 
 const transactionSchema = z.object({
@@ -285,7 +285,7 @@ export function TransactionForm({ initialData, onSubmit, isLoading }: Transactio
 
         <div className="pt-4">
           <Button type="submit" className="w-full h-12 text-base font-semibold shadow-lg shadow-primary/20" disabled={isLoading}>
-            {isLoading && <LoadingSpinner size="sm" className="mr-2" />}
+            {isLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" aria-hidden="true" />}
             {initialData ? "Actualizar transacción" : "Guardar transacción"}
           </Button>
         </div>

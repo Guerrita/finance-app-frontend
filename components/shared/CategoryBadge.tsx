@@ -13,7 +13,7 @@ export function CategoryBadge({
   className,
 }: CategoryBadgeProps) {
   const icon = getCategoryIcon(categoryId)
-  const label = getCategoryLabel(categoryId, locale)
+  const label = getCategoryLabel(categoryId)
 
   return (
     <span

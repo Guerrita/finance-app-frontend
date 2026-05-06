@@ -34,7 +34,7 @@ import { useCategories } from "@/lib/api/endpoints/categories"
 
 const formSchema = z.object({
   name: z.string().min(1, "El nombre es requerido"),
-  amount: z.coerce.number().positive("El monto debe ser mayor a 0"),
+  amount: z.number().positive("El monto debe ser mayor a 0"),
   category: z.string().min(1, "La categoría es requerida"),
   currency: z.string().min(1, "La moneda es requerida"),
 })
@@ -135,7 +135,13 @@ export function BudgetFormSheet({
                 <FormItem>
                   <FormLabel>Monto</FormLabel>
                   <FormControl>
-                    <Input type="number" step="any" placeholder="0.00" {...field} />
+                    <Input
+                      type="number"
+                      step="any"
+                      placeholder="0.00"
+                      {...field}
+                      onChange={(e) => field.onChange(Number(e.target.value))}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

@@ -7,7 +7,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { LoadingSpinner } from "@/components/shared/LoadingSpinner"
+import { Loader2 } from "lucide-react"
 
 interface DeleteTransactionDialogProps {
   isOpen: boolean
@@ -46,7 +46,7 @@ export function DeleteTransactionDialog({
             disabled={isLoading}
             className="gap-2 shadow-lg shadow-rose-500/20 sm:order-2"
           >
-            {isLoading && <LoadingSpinner size="sm" />}
+            {isLoading && <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />}
             Eliminar transacción
           </Button>
         </DialogFooter>

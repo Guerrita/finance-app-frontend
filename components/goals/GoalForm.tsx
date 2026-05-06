@@ -34,9 +34,9 @@ const goalSchema = z.object({
   type: z.string().min(1, "El tipo es requerido"),
   target_amount: z.number().min(0.01, "El monto debe ser mayor a 0"),
   target_date: z.string().min(1, "La fecha es requerida"),
-  current_saved: z.number().default(0),
+  current_saved: z.number(),
   monthly_contribution: z.number().optional(),
-  currency: z.string().default("COP"),
+  currency: z.string(),
 })
 
 export type GoalFormValues = z.infer<typeof goalSchema>

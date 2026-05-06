@@ -3,11 +3,10 @@
 import { format, isToday, isYesterday, parseISO } from "date-fns"
 import { es } from "date-fns/locale"
 import { Transaction } from "@/types/api"
-import { Pencil, Trash2 } from "lucide-react"
+import { Pencil, Trash2, Loader2 } from "lucide-react"
 import { CurrencyDisplay } from "@/components/shared/CurrencyDisplay"
 import { useCategories } from "@/lib/api/endpoints/categories"
 import { Button } from "@/components/ui/button"
-import { LoadingSpinner } from "@/components/shared/LoadingSpinner"
 
 interface TransactionListProps {
   transactions: Transaction[]
@@ -144,7 +143,7 @@ export function TransactionList({
             disabled={isLoadingMore}
             className="w-full max-w-xs h-11 border-dashed rounded-xl gap-2 font-medium"
           >
-            {isLoadingMore && <LoadingSpinner size="sm" />}
+            {isLoadingMore && <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />}
             {isLoadingMore ? "Cargando..." : "Cargar más transacciones"}
           </Button>
         </div>

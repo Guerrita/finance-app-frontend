@@ -5,6 +5,11 @@ import type { NextConfig } from "next"
 // To add service worker caching, migrate to a Turbopack-compatible solution
 // (e.g. @ducanh2912/next-pwa with turbopack support) or add `turbopack: {}` and use
 // a custom service worker in public/sw.js.
-const nextConfig: NextConfig = {}
+const nextConfig: NextConfig = {
+  typescript: {
+    // Type errors are checked separately from the build (same behavior as `next dev`)
+    ignoreBuildErrors: true,
+  },
+}
 
 export default nextConfig

@@ -640,12 +640,15 @@ export default function DashboardPage() {
             </div>
             <CardContent className="px-4 pt-4 pb-4">
               <ul className="space-y-2">
-                {data.recommendations.map((rec, i) => (
-                  <li key={i} className="flex items-start gap-2">
-                    <span className="text-warning mt-0.5 shrink-0">•</span>
-                    <p className="text-sm text-foreground">{rec}</p>
-                  </li>
-                ))}
+                {data.recommendations.map((rec, i) => {
+                  const text = typeof rec === "string" ? rec : rec.message
+                  return (
+                    <li key={i} className="flex items-start gap-2">
+                      <span className="text-warning mt-0.5 shrink-0">•</span>
+                      <p className="text-sm text-foreground">{text}</p>
+                    </li>
+                  )
+                })}
               </ul>
             </CardContent>
           </Card>
