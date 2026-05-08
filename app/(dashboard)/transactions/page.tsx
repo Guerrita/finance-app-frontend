@@ -1,32 +1,31 @@
 "use client"
 
-import { Receipt } from "lucide-react"
-import { Button } from "@/components/ui/button"
-
-
 import { useState } from "react"
+import { Receipt, Plus } from "lucide-react"
 import { useMonthContext } from "@/lib/context/month.context"
-import { 
-  useTransactions, 
-  useCreateTransaction, 
-  useUpdateTransaction, 
-  useDeleteTransaction 
+import {
+  useTransactions,
+  useCreateTransaction,
+  useUpdateTransaction,
+  useDeleteTransaction,
 } from "@/lib/api/endpoints/transactions"
+import { PageWrapper } from "@/components/layout/PageWrapper"
 import { TransactionSummary } from "@/components/transactions/TransactionSummary"
 import { TransactionFilters } from "@/components/transactions/TransactionFilters"
 import { TransactionList } from "@/components/transactions/TransactionList"
 import { TransactionForm, TransactionFormValues } from "@/components/transactions/TransactionForm"
 import { DeleteTransactionDialog } from "@/components/transactions/DeleteTransactionDialog"
-import { 
-  Sheet, 
-  SheetContent, 
-  SheetDescription, 
-  SheetHeader, 
-  SheetTitle 
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
 } from "@/components/ui/sheet"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { ErrorState } from "@/components/shared/ErrorState"
 import { SkeletonCard } from "@/components/shared/SkeletonCard"
+import { Button } from "@/components/ui/button"
 import { Transaction } from "@/types/api"
 import { toast } from "sonner"
 
@@ -113,27 +112,37 @@ export default function TransactionsPage() {
   const allTransactions = data?.pages.flatMap((page) => page.transactions) || []
   const summary = data?.pages[0]?.summary || { total_income: 0, total_expenses: 0, balance: 0 }
 
+  const openCreate = () => {
+    setEditingTransaction(null)
+    setIsSheetOpen(true)
+  }
+
   return (
-    <div className="container max-w-5xl py-6 space-y-8 animate-in fade-in duration-700">
-      <TransactionSummary
-        income={summary.total_income}
-        expenses={summary.total_expenses}
-        balance={summary.balance}
-      />
+    <PageWrapper
+      title="Transacciones"
+      action={
+        <Button onClick={openCreate} className="gap-2 shadow-lg shadow-primary/20">
+          <Plus className="h-4 w-4" />
+          Nueva transacción
+        </Button>
+      }
+    >
+      <div className="space-y-6 pb-safe">
+        <TransactionSummary
+          income={summary.total_income}
+          expenses={summary.total_expenses}
+          balance={summary.balance}
+        />
 
-      <TransactionFilters
-        type={type}
-        setType={setType}
-        category={category}
-        setCategory={setCategory}
-        onNewTransaction={() => {
-          setEditingTransaction(null)
-          setIsSheetOpen(true)
-        }}
-      />
+        <TransactionFilters
+          type={type}
+          setType={setType}
+          category={category}
+          setCategory={setCategory}
+        />
 
-      <div className="space-y-4">
-        {isLoading ? (
+        <div className="space-y-4">
+          {isLoading ? (
           <div className="space-y-4">
             <SkeletonCard className="h-24 w-full rounded-2xl" />
             <SkeletonCard className="h-24 w-full rounded-2xl" />
@@ -203,6 +212,7 @@ export default function TransactionsPage() {
         onConfirm={handleDelete}
         isLoading={deleteMutation.isPending}
       />
-    </div>
+      </div>
+    </PageWrapper>
   )
 }

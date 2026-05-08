@@ -1,6 +1,9 @@
 import axios from "axios"
+import { toast } from "sonner"
 import { env } from "@/lib/env"
 import { useAuthStore } from "@/store/auth.store"
+
+const MAX_RETRIES = 3
 
 export const apiClient = axios.create({
   baseURL: env.NEXT_PUBLIC_API_URL,
@@ -26,8 +29,20 @@ apiClient.interceptors.response.use(
   async (error) => {
     console.error(`[API Client] Error in ${error.config?.method?.toUpperCase()} ${error.config?.url}:`, error.response?.status, error.response?.data || error.message)
     const original = error.config
-    
-    // No intentar refrescar para rutas de autenticación
+
+    // ── 429: Rate limiting con exponential backoff ─────────────────────
+    if (error.response?.status === 429) {
+      original._retryCount = (original._retryCount ?? 0) + 1
+      if (original._retryCount <= MAX_RETRIES) {
+        const delay = Math.pow(2, original._retryCount) * 1000
+        await new Promise((resolve) => setTimeout(resolve, delay))
+        return apiClient(original)
+      }
+      toast.error("Demasiadas solicitudes. Intenta de nuevo en un momento.")
+      return Promise.reject(error)
+    }
+
+    // ── 401: Token refresh ────────────────────────────────────────────
     if (error.response?.status !== 401 || original._retry || original.url?.includes("/auth/")) {
       return Promise.reject(error)
     }

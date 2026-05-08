@@ -6,8 +6,8 @@ import * as z from "zod"
 import { useEffect } from "react"
 import { useAuthStore } from "@/store/auth.store"
 import { useCategories } from "@/lib/api/endpoints/categories"
-import { useIncomes } from "@/lib/api/endpoints/income"
-import { useExpensesFixed, useExpensesVariable } from "@/lib/api/endpoints/expenses"
+import { useIncomeVariable } from "@/lib/api/endpoints/income"
+import { useExpensesVariable } from "@/lib/api/endpoints/expenses"
 import { useMonthContext } from "@/lib/context/month.context"
 import {
   Form,
@@ -55,9 +55,8 @@ export function TransactionForm({ initialData, onSubmit, isLoading }: Transactio
   const { user } = useAuthStore()
   const { month } = useMonthContext()
   const { data: categories } = useCategories()
-  const { data: incomes } = useIncomes()
-  const { data: fixedExpenses } = useExpensesFixed()
-  const { data: variableExpenses } = useExpensesVariable(month)
+  const { items: variableIncomesItems } = useIncomeVariable()
+  const { items: variableExpensesItems } = useExpensesVariable(month)
 
   const form = useForm<TransactionFormValues>({
     resolver: zodResolver(transactionSchema),
@@ -233,28 +232,13 @@ export function TransactionForm({ initialData, onSubmit, isLoading }: Transactio
                   <SelectContent>
                     <SelectItem value="none">Ninguno</SelectItem>
                     {type === "income" ? (
-                      incomes?.incomes.map((inc) => (
+                      variableIncomesItems.map((inc) => (
                         <SelectItem key={inc.id} value={inc.id}>{inc.name}</SelectItem>
                       ))
                     ) : (
-                      <>
-                        {fixedExpenses?.expenses.length ? (
-                          <>
-                            <div className="px-2 py-1.5 text-xs font-bold text-muted-foreground uppercase tracking-wider">Fijos</div>
-                            {fixedExpenses.expenses.map((exp) => (
-                              <SelectItem key={exp.id} value={exp.id}>{exp.name}</SelectItem>
-                            ))}
-                          </>
-                        ) : null}
-                        {variableExpenses?.expenses.length ? (
-                          <>
-                            <div className="px-2 py-1.5 text-xs font-bold text-muted-foreground mt-2 border-t pt-2 uppercase tracking-wider">Variables</div>
-                            {variableExpenses.expenses.map((exp) => (
-                              <SelectItem key={exp.id} value={exp.id}>{exp.name}</SelectItem>
-                            ))}
-                          </>
-                        ) : null}
-                      </>
+                      variableExpensesItems.map((exp: any) => (
+                        <SelectItem key={exp.id} value={exp.id}>{exp.name}</SelectItem>
+                      ))
                     )}
                   </SelectContent>
                 </Select>

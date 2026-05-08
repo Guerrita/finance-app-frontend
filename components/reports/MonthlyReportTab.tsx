@@ -208,8 +208,7 @@ export function MonthlyReportTab({ month }: MonthlyReportTabProps) {
           <CardTitle className="text-base font-semibold text-slate-700">Comparativa Planificado vs Real</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="h-72">
-            <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer width="100%" height={288} minWidth={1}>
               <BarChart data={barChartData} margin={{ top: 4, right: 16, left: 0, bottom: 4 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                 <XAxis dataKey="name" tick={{ fontSize: 12 }} />
@@ -230,8 +229,7 @@ export function MonthlyReportTab({ month }: MonthlyReportTabProps) {
                   ))}
                 </Bar>
               </BarChart>
-            </ResponsiveContainer>
-          </div>
+          </ResponsiveContainer>
         </CardContent>
       </Card>
 
@@ -249,6 +247,7 @@ export function MonthlyReportTab({ month }: MonthlyReportTabProps) {
                     <thead>
                       <tr className="border-y border-slate-100 bg-slate-50">
                         <th className="text-left px-6 py-3 font-medium text-slate-500">Fuente de ingreso</th>
+                        <th className="text-left px-4 py-3 font-medium text-slate-500">Tipo</th>
                         <th className="text-right px-4 py-3 font-medium text-slate-500">Planificado</th>
                         <th className="text-right px-4 py-3 font-medium text-slate-500">Real</th>
                         <th className="text-right px-4 py-3 font-medium text-slate-500">Varianza</th>
@@ -256,11 +255,21 @@ export function MonthlyReportTab({ month }: MonthlyReportTabProps) {
                       </tr>
                     </thead>
                     <tbody>
-                      {income_breakdown.map((item) => (
+                      {income_breakdown.map((item) => {
+                        const isFixed = item.transactions_count === 0 && item.variance === 0
+                        return (
                         <tr key={item.income_id} className="border-b border-slate-50 hover:bg-slate-50/60 transition-colors">
                           <td className="px-6 py-3">
                             <p className="font-medium text-slate-700">{item.name}</p>
                             <p className="text-xs text-slate-400">{getCategoryLabel(item.category)}</p>
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className={cn(
+                              "inline-flex px-2 py-0.5 rounded-full text-xs font-medium",
+                              isFixed ? "bg-blue-50 text-blue-700" : "bg-purple-50 text-purple-700"
+                            )}>
+                              {isFixed ? "Fijo" : "Variable"}
+                            </span>
                           </td>
                           <td className="text-right px-4 py-3 tabular-nums text-slate-500">{formatCurrency(item.planned)}</td>
                           <td className="text-right px-4 py-3 tabular-nums font-medium text-slate-800">{formatCurrency(item.actual)}</td>
@@ -269,11 +278,13 @@ export function MonthlyReportTab({ month }: MonthlyReportTabProps) {
                           </td>
                           <td className="text-right px-6 py-3 text-slate-400 tabular-nums">{item.transactions_count}</td>
                         </tr>
-                      ))}
+                        )
+                      })}
                     </tbody>
                     <tfoot>
                       <tr className="bg-slate-50 border-t border-slate-200 font-semibold">
                         <td className="px-6 py-3 text-slate-700">Total</td>
+                        <td />
                         <td className="text-right px-4 py-3 tabular-nums text-slate-600">{formatCurrency(incomePlannedTotal)}</td>
                         <td className="text-right px-4 py-3 tabular-nums text-slate-800">{formatCurrency(incomeActualTotal)}</td>
                         <td className="text-right px-4 py-3">
@@ -376,8 +387,8 @@ export function MonthlyReportTab({ month }: MonthlyReportTabProps) {
           </CardHeader>
           <CardContent>
             <div className="flex flex-col lg:flex-row gap-6 items-start">
-              <div className="h-64 w-full lg:w-72 flex-shrink-0">
-                <ResponsiveContainer width="100%" height="100%">
+              <div className="w-full lg:w-72 flex-shrink-0">
+                <ResponsiveContainer width="100%" height={256} minWidth={1}>
                   <PieChart>
                     <Pie
                       data={pieData}
@@ -397,7 +408,7 @@ export function MonthlyReportTab({ month }: MonthlyReportTabProps) {
                   </PieChart>
                 </ResponsiveContainer>
               </div>
-              <div className="overflow-x-auto w-full">
+              <div className="overflow-x-auto w-full pt-4">
                 <table className="w-full text-sm min-w-[400px]">
                   <thead>
                     <tr className="border-b border-slate-100">

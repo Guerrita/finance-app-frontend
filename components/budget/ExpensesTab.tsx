@@ -3,10 +3,11 @@
 import { useState } from "react"
 import { useExpensesFixed, useExpensesVariable, useCreateExpense, useUpdateExpense, useDeleteExpense } from "@/lib/api/endpoints/expenses"
 import { Button } from "@/components/ui/button"
-import { Plus, Edit2, Trash2, ChevronDown } from "lucide-react"
+import { Plus, Edit2, Trash2 } from "lucide-react"
 import { formatCurrency } from "@/lib/utils/format"
-import { getCategoryIcon, getCategoryLabel } from "@/lib/utils/categories"
+import { getCategoryIcon, getCategoryName } from "@/lib/utils/categories"
 import { BudgetFormSheet } from "./BudgetFormSheet"
+import { PaginationControls } from "@/components/shared/PaginationControls"
 import { toast } from "sonner"
 import {
   Accordion,
@@ -27,9 +28,9 @@ import { useMonthContext } from "@/lib/context/month.context"
 
 export function ExpensesTab() {
   const { month } = useMonthContext()
-  const { data: fixedData, isLoading: loadingFixed } = useExpensesFixed()
-  const { data: variableData, isLoading: loadingVariable } = useExpensesVariable(month)
-  
+  const { items: rawFixed, isLoading: loadingFixed, hasMore: hasMoreFixed, onLoadMore: loadMoreFixed, isFetching: fetchingFixed } = useExpensesFixed()
+  const { items: rawVariable, isLoading: loadingVariable, hasMore: hasMoreVariable, onLoadMore: loadMoreVariable, isFetching: fetchingVariable } = useExpensesVariable(month)
+
   const { mutateAsync: createExpense } = useCreateExpense()
   const { mutateAsync: updateExpense } = useUpdateExpense()
   const { mutateAsync: deleteExpense } = useDeleteExpense()
@@ -38,12 +39,17 @@ export function ExpensesTab() {
   const [editingItem, setEditingItem] = useState<any>(null)
   const [editingType, setEditingType] = useState<"fixed" | "variable">("fixed")
   const [deletingItem, setDeletingItem] = useState<{id: string, type: "fixed" | "variable"} | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
 
-  const fixedExpenses = fixedData?.expenses || []
-  const variableExpenses = variableData?.expenses || []
-  
+  const fixedExpenses = rawFixed
+  const variableExpenses = rawVariable.map((exp: any) => ({
+    ...exp,
+    amount: exp.estimated_amount ?? exp.amount,
+  }))
+
   const totalFixed = fixedExpenses.reduce((acc, curr) => acc + curr.amount, 0)
-  const totalVariable = variableExpenses.reduce((acc, curr) => acc + curr.amount, 0)
+  const totalVariable = variableExpenses.reduce((acc: number, curr: any) => acc + curr.amount, 0)
 
   const handleAdd = (type: "fixed" | "variable") => {
     setEditingType(type)
@@ -59,27 +65,32 @@ export function ExpensesTab() {
 
   const handleDelete = async () => {
     if (!deletingItem) return
+    setIsDeleting(true)
     try {
       await deleteExpense({ type: deletingItem.type, id: deletingItem.id })
       toast.success("Gasto eliminado")
     } catch (error) {
       toast.error("Error al eliminar")
     } finally {
+      setIsDeleting(false)
       setDeletingItem(null)
     }
   }
 
   const onSubmit = async (values: any) => {
+    setIsSubmitting(true)
     try {
       if (editingItem) {
         await updateExpense({ type: editingType, id: editingItem.id, dto: values })
       } else {
-        await createExpense({ type: editingType, dto: values, month }) 
+        await createExpense({ type: editingType, dto: values, month })
       }
       setIsSheetOpen(false)
       toast.success(editingItem ? "Gasto actualizado" : "Gasto creado")
     } catch (error) {
       toast.error("Error al guardar")
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -108,15 +119,22 @@ export function ExpensesTab() {
             </div>
             <div className="grid gap-2">
               {fixedExpenses.map(item => (
-                <ExpenseItem 
-                  key={item.id} 
-                  item={item} 
-                  onEdit={() => handleEdit(item, "fixed")} 
-                  onDelete={() => setDeletingItem({id: item.id, type: "fixed"})} 
+                <ExpenseItem
+                  key={item.id}
+                  item={item}
+                  onEdit={() => handleEdit(item, "fixed")}
+                  onDelete={() => setDeletingItem({id: item.id, type: "fixed"})}
                 />
               ))}
               {fixedExpenses.length === 0 && <EmptyState />}
             </div>
+            <PaginationControls
+              hasMore={hasMoreFixed}
+              isLoading={fetchingFixed}
+              onLoadMore={loadMoreFixed}
+              count={fixedExpenses.length}
+              label="gastos fijos"
+            />
           </AccordionContent>
         </AccordionItem>
 
@@ -139,16 +157,23 @@ export function ExpensesTab() {
               </Button>
             </div>
             <div className="grid gap-2">
-              {variableExpenses.map(item => (
-                <ExpenseItem 
-                  key={item.id} 
-                  item={item} 
-                  onEdit={() => handleEdit(item, "variable")} 
-                  onDelete={() => setDeletingItem({id: item.id, type: "variable"})} 
+              {variableExpenses.map((item: any) => (
+                <ExpenseItem
+                  key={item.id}
+                  item={item}
+                  onEdit={() => handleEdit(item, "variable")}
+                  onDelete={() => setDeletingItem({id: item.id, type: "variable"})}
                 />
               ))}
               {variableExpenses.length === 0 && <EmptyState />}
             </div>
+            <PaginationControls
+              hasMore={hasMoreVariable}
+              isLoading={fetchingVariable}
+              onLoadMore={loadMoreVariable}
+              count={variableExpenses.length}
+              label="gastos variables"
+            />
           </AccordionContent>
         </AccordionItem>
       </Accordion>
@@ -159,7 +184,7 @@ export function ExpensesTab() {
         type={editingType}
         item={editingItem}
         onSubmit={onSubmit}
-        isSubmitting={false}
+        isSubmitting={isSubmitting}
       />
 
       <Dialog open={!!deletingItem} onOpenChange={(open) => !open && setDeletingItem(null)}>
@@ -171,8 +196,10 @@ export function ExpensesTab() {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeletingItem(null)}>Cancelar</Button>
-            <Button variant="destructive" onClick={handleDelete}>Eliminar</Button>
+            <Button variant="outline" onClick={() => setDeletingItem(null)} disabled={isDeleting}>Cancelar</Button>
+            <Button variant="destructive" onClick={handleDelete} disabled={isDeleting}>
+              {isDeleting ? "Eliminando..." : "Eliminar"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -187,7 +214,7 @@ function ExpenseItem({ item, onEdit, onDelete }: { item: any, onEdit: () => void
         <span className="text-lg">{getCategoryIcon(item.category)}</span>
         <div>
           <p className="text-sm font-medium">{item.name}</p>
-          <p className="text-[10px] text-muted-foreground uppercase">{getCategoryLabel(item.category)}</p>
+          <p className="text-[10px] text-muted-foreground uppercase">{getCategoryName(item.category)}</p>
         </div>
       </div>
       <div className="flex items-center gap-4">

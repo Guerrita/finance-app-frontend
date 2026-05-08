@@ -55,7 +55,20 @@ export interface Income {
   id: string
   name: string
   amount: number
-  type: string
+  category: string
+  currency: string
+  recurrence_day?: number | null
+  start_month?: string
+  end_month?: string | null
+  is_recurring?: boolean
+  created_at: number
+  updated_at: number
+}
+
+export interface IncomeVariable {
+  id: string
+  name: string
+  amount: number
   category: string
   currency: string
   created_at: number
@@ -69,6 +82,10 @@ export interface Expense {
   amount: number
   category: string
   currency: string
+  recurrence_day?: number | null
+  start_month?: string
+  end_month?: string | null
+  is_recurring?: boolean
   created_at: number
   updated_at: number
 }
@@ -79,8 +96,15 @@ export type GoalType =
   | "education" | "wedding" | "business" | "retirement" | "health" 
   | "electronics" | "celebration" | "debt_payoff" | "furniture" | "pet" | "other"
 
-export type ContributionType = 
+export type ContributionType =
   | "regular" | "extra" | "initial" | "bonus" | "gift" | "adjustment" | "other"
+
+export interface ContributionInput {
+  amount: number
+  date: string
+  notes?: string
+  type?: ContributionType
+}
 
 export interface Contribution {
   id: string
@@ -96,7 +120,7 @@ export interface Goal {
   name: string
   type: GoalType
   target_amount: number
-  target_date: string
+  target_date: number
   monthly_contribution: number
   current_saved: number
   currency: string
@@ -312,6 +336,88 @@ export interface YtdReport {
   monthly_breakdown: YtdMonthlyBreakdown[]
   top_expense_categories: YtdTopExpenseCategory[]
   goals_progress: YtdGoalProgress[]
+}
+
+// Plan
+export interface IncomePlanSource {
+  id: string
+  name: string
+  amount: number
+  category: string
+  currency: string
+  type?: "fixed" | "variable"
+  recurrence_day?: number | null
+  start_month?: string
+  end_month?: string | null
+  is_recurring?: boolean
+}
+
+export interface MonthPlan {
+  month: string;
+  year: number;
+  income: { sources: IncomePlanSource[]; total: number };
+  fixed_expenses: { items: Expense[]; total: number };
+  variable_expenses: { items: Expense[]; total: number };
+  goals: { items: Goal[]; total_monthly_contribution: number };
+  sinking_funds: { items: SinkingFund[]; total_monthly_contribution: number };
+  summary: {
+    total_income: number;
+    total_expenses: number;
+    total_savings: number;
+    available: number;
+    savings_rate: number;
+    is_deficit: boolean;
+  };
+}
+
+export interface MonthProjection {
+  month: string;
+  income: number;
+  expenses: number;
+  savings: number;
+  cumulative_savings: number;
+}
+
+export interface Projection {
+  months_projected: number;
+  monthly_projections: MonthProjection[];
+  summary: {
+    avg_monthly_income: number;
+    avg_monthly_expenses: number;
+    avg_savings_rate: number;
+    total_projected_savings: number;
+  };
+}
+
+// Dashboard Overview (lightweight endpoint)
+export interface DashboardOverview {
+  balance: number;
+  total_income: number;
+  total_expenses: number;
+  budget_status: "on_track" | "over_budget" | "under_budget";
+  goals_progress: number;
+  active_alerts: number;
+}
+
+// Trends
+export type TrendDirection = "increasing" | "decreasing" | "stable"
+
+export interface MonthlyTrendPoint {
+  month: string;
+  income: number;
+  expenses: number;
+  balance: number;
+  savings_rate: number;
+}
+
+export interface TrendsData {
+  months_analyzed: number;
+  monthly_data: MonthlyTrendPoint[];
+  averages: { income: number; expenses: number; balance: number; savings_rate: number };
+  trends: { income: TrendDirection; expenses: TrendDirection; balance: TrendDirection };
+  top_categories: Array<{
+    category: string; total: number; percentage: number; trend: TrendDirection;
+  }>;
 }
 
 // Budget

@@ -1,6 +1,8 @@
 import { apiClient } from "@/lib/api/client"
 import type { ApiResponse, Goal, GoalProgress } from "@/types/api"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { usePaginated } from "@/lib/hooks/usePaginated"
+import { QUERY_KEYS } from "@/lib/utils/constants"
 
 export interface CreateGoalDto {
   name: string
@@ -64,9 +66,11 @@ export const goalsApi = {
 }
 
 export const useGoals = () => {
-  return useQuery({
-    queryKey: ["goals"],
-    queryFn: goalsApi.list,
+  return usePaginated<Goal>({
+    queryKey: QUERY_KEYS.goals(),
+    url: "/goals",
+    dataKey: "goals",
+    pageSize: 12,
   })
 }
 
@@ -83,7 +87,7 @@ export const useCreateGoal = () => {
   return useMutation({
     mutationFn: goalsApi.create,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["goals"] })
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.goals() })
     },
   })
 }
@@ -93,7 +97,7 @@ export const useUpdateGoal = () => {
   return useMutation({
     mutationFn: goalsApi.update,
     onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: ["goals"] })
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.goals() })
       queryClient.invalidateQueries({ queryKey: ["goals", id] })
     },
   })
@@ -104,7 +108,7 @@ export const useDeleteGoal = () => {
   return useMutation({
     mutationFn: goalsApi.delete,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["goals"] })
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.goals() })
     },
   })
 }
@@ -114,7 +118,7 @@ export const useAddGoalContribution = () => {
   return useMutation({
     mutationFn: goalsApi.addContribution,
     onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: ["goals"] })
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.goals() })
       queryClient.invalidateQueries({ queryKey: ["goals", id] })
       queryClient.invalidateQueries({ queryKey: ["goals", id, "progress"] })
     },

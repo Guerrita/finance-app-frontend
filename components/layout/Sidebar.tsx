@@ -7,7 +7,6 @@ import {
   ArrowLeftRight,
   PieChart,
   Target,
-  Wallet,
   BarChart3,
   LogOut,
   Settings,
@@ -21,7 +20,6 @@ const navItems = [
   { href: ROUTES.transactions, label: "Transacciones",   Icon: ArrowLeftRight },
   { href: ROUTES.budget,       label: "Presupuesto",     Icon: PieChart },
   { href: ROUTES.goals,        label: "Metas",           Icon: Target },
-  { href: ROUTES.sinkingFunds, label: "Fondos",          Icon: Wallet },
   { href: ROUTES.reports,      label: "Reportes",        Icon: BarChart3 },
 ]
 
@@ -42,7 +40,7 @@ export function Sidebar({ className }: SidebarProps) {
   return (
     <aside
       className={cn(
-        "w-60 min-h-screen flex-col bg-slate-900 text-white sticky top-0",
+        "w-60 h-screen shrink-0 flex-col bg-slate-900 text-white sticky top-0 overflow-y-auto",
         className
       )}
     >

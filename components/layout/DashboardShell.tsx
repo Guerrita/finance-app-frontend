@@ -1,10 +1,13 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useQueryClient } from "@tanstack/react-query"
 import { Sidebar } from "./Sidebar"
 import { Header } from "./Header"
 import { BottomNav } from "./BottomNav"
 import { cn } from "@/lib/utils"
+import { QUERY_KEYS } from "@/lib/utils/constants"
+import { fetchCategories, fetchCurrencies } from "@/lib/api/endpoints/categories"
 
 interface DashboardShellProps {
   children: React.ReactNode
@@ -12,6 +15,20 @@ interface DashboardShellProps {
 
 export function DashboardShell({ children }: DashboardShellProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+  const queryClient = useQueryClient()
+
+  useEffect(() => {
+    queryClient.prefetchQuery({
+      queryKey: QUERY_KEYS.categories(),
+      queryFn: fetchCategories,
+      staleTime: Infinity,
+    })
+    queryClient.prefetchQuery({
+      queryKey: QUERY_KEYS.currencies(),
+      queryFn: fetchCurrencies,
+      staleTime: Infinity,
+    })
+  }, [])
 
   return (
     <div className="flex min-h-screen bg-surface-subtle">

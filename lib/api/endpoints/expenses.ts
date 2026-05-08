@@ -1,12 +1,18 @@
 import { apiClient } from "@/lib/api/client"
 import type { ApiResponse, Expense } from "@/types/api"
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { usePaginated } from "@/lib/hooks/usePaginated"
+import { QUERY_KEYS } from "@/lib/utils/constants"
 
 export interface CreateExpenseDto {
   name: string
   amount: number
-  category: string
-  currency: string
+  category?: string
+  currency?: string
+  recurrence_day?: number
+  start_month?: string
+  end_month?: string
+  is_recurring?: boolean
 }
 
 export const expensesApi = {
@@ -21,7 +27,6 @@ export const expensesApi = {
       params: { month }
     })
     if (!data.success) throw new Error(data.error.message)
-    // Mapear estimated_amount a amount para consistencia en el frontend
     const expenses = data.data.expenses.map(exp => ({
       ...exp,
       amount: exp.estimated_amount ?? exp.amount
@@ -64,23 +69,28 @@ export const expensesApi = {
 }
 
 export const useExpensesFixed = () => {
-  return useQuery({
-    queryKey: ["expenses", "fixed"],
-    queryFn: expensesApi.listFixed,
+  return usePaginated<Expense>({
+    queryKey: QUERY_KEYS.fixedExpenses(),
+    url: "/expenses/fixed",
+    dataKey: "expenses",
+    pageSize: 20,
   })
 }
 
 export const useExpensesVariable = (month?: string) => {
-  return useQuery({
-    queryKey: ["expenses", "variable", month],
-    queryFn: () => expensesApi.listVariable(month),
+  return usePaginated<any>({
+    queryKey: QUERY_KEYS.variableExpenses(),
+    url: "/expenses/variable",
+    params: month ? { month } : undefined,
+    dataKey: "expenses",
+    pageSize: 20,
   })
 }
 
 export const useCreateExpense = () => {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({ type, dto, month }: { type: "fixed" | "variable"; dto: CreateExpenseDto; month?: string }) => 
+    mutationFn: ({ type, dto, month }: { type: "fixed" | "variable"; dto: CreateExpenseDto; month?: string }) =>
       type === "fixed" ? expensesApi.createFixed(dto) : expensesApi.createVariable({ ...dto, month }),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["expenses", variables.type] })
@@ -91,7 +101,7 @@ export const useCreateExpense = () => {
 export const useUpdateExpense = () => {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({ type, id, dto }: { type: "fixed" | "variable"; id: string; dto: Partial<CreateExpenseDto> }) => 
+    mutationFn: ({ type, id, dto }: { type: "fixed" | "variable"; id: string; dto: Partial<CreateExpenseDto> }) =>
       expensesApi.update(type, id, dto),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["expenses", variables.type] })
@@ -102,7 +112,7 @@ export const useUpdateExpense = () => {
 export const useDeleteExpense = () => {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({ type, id }: { type: "fixed" | "variable"; id: string }) => 
+    mutationFn: ({ type, id }: { type: "fixed" | "variable"; id: string }) =>
       expensesApi.delete(type, id),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["expenses", variables.type] })

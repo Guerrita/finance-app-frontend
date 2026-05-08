@@ -29,7 +29,7 @@ import {
 
 import { useMonthContext } from "@/lib/context/month.context"
 import { useAuthStore } from "@/store/auth.store"
-import { useDashboard } from "@/lib/api/endpoints/dashboard"
+import { useDashboard, useDashboardOverview } from "@/lib/api/endpoints/dashboard"
 import { PageWrapper } from "@/components/layout/PageWrapper"
 import { ErrorState } from "@/components/shared/ErrorState"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -74,7 +74,8 @@ function statusChip(progress: number) {
 function CircularRing({ value, size = 48 }: { value: number; size?: number }) {
   const r = (size - 8) / 2
   const circ = 2 * Math.PI * r
-  const offset = circ - (Math.min(value, 100) / 100) * circ
+  const pct = Number.isFinite(value) ? value : 0
+  const offset = circ - (Math.min(pct, 100) / 100) * circ
   return (
     <div className="relative shrink-0" style={{ width: size, height: size }}>
       <svg width={size} height={size} style={{ transform: "rotate(-90deg)" }}>
@@ -272,12 +273,13 @@ function ExpensesByCategory({
 
 export default function DashboardPage() {
   const { month } = useMonthContext()
+  const overview = useDashboardOverview()
   const { data, isLoading, isFetching, error } = useDashboard(month)
   const queryClient = useQueryClient()
   const currency = useAuthStore((s) => s.user?.preferred_currency ?? "COP")
 
   function handleRefresh() {
-    queryClient.invalidateQueries({ queryKey: QUERY_KEYS.dashboard(month) })
+    queryClient.invalidateQueries({ queryKey: ["dashboard"] })
   }
 
   const refreshBtn = (
@@ -293,7 +295,7 @@ export default function DashboardPage() {
     </Button>
   )
 
-  if (isLoading) {
+  if (isLoading && !overview.data) {
     return (
       <PageWrapper title="Dashboard" action={refreshBtn}>
         <DashboardSkeleton />
@@ -301,7 +303,7 @@ export default function DashboardPage() {
     )
   }
 
-  if (error || !data) {
+  if (error || (!data && !overview.data)) {
     return (
       <PageWrapper title="Dashboard">
         <ErrorState
@@ -312,10 +314,10 @@ export default function DashboardPage() {
     )
   }
 
-  const { financial_summary: s } = data
+  const s = data?.financial_summary
   const monthLabel = formatMonth(month)
 
-  const chartData = [
+  const chartData = s ? [
     {
       name: "Ingresos",
       Planificado: s.total_planned_income,
@@ -328,42 +330,77 @@ export default function DashboardPage() {
       Real: s.total_actual_expenses,
       isIncome: false,
     },
-  ]
+  ] : []
 
   return (
     <PageWrapper title="Dashboard" action={refreshBtn}>
       <div className="space-y-6 pb-safe">
 
-        {/* ── Fila 1: Progress Banner ───────────────────────────── */}
+        {/* ── Fila 1: Progress Banner (overview data — visible rápido) ─ */}
         <Card className="card-base">
           <CardContent className="p-4">
             <div className="flex flex-col sm:flex-row sm:items-center gap-4">
               <div className="flex-1">
-                <p className="text-sm font-semibold text-foreground capitalize">
-                  {monthLabel} — Día {data.days_elapsed} de {data.days_in_month}
-                </p>
-                <Progress value={data.progress_percentage} className="mt-2 h-2" />
-                <p className="text-xs text-muted-foreground mt-1">
-                  {data.progress_percentage}% del mes transcurrido
-                </p>
+                {data ? (
+                  <>
+                    <p className="text-sm font-semibold text-foreground capitalize">
+                      {monthLabel} — Día {data.days_elapsed} de {data.days_in_month}
+                    </p>
+                    <Progress value={data.progress_percentage} className="mt-2 h-2" />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {data.progress_percentage}% del mes transcurrido
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <Skeleton className="h-4 w-52 mb-3" />
+                    <Skeleton className="h-2 w-full mb-2" />
+                    <Skeleton className="h-3 w-32" />
+                  </>
+                )}
               </div>
               <div className="flex items-center gap-2">
-                {s.projected_end_balance >= 0 ? (
-                  <ArrowUpRight className="h-5 w-5 text-income shrink-0" />
-                ) : (
-                  <ArrowDownRight className="h-5 w-5 text-expense shrink-0" />
-                )}
-                <div>
-                  <p className="text-xs text-muted-foreground">Saldo proyectado fin de mes</p>
-                  <p
-                    className={cn(
-                      "text-lg font-bold tabular-nums",
-                      s.projected_end_balance >= 0 ? "text-income" : "text-expense"
+                {overview.data ? (
+                  <>
+                    {overview.data.balance >= 0 ? (
+                      <ArrowUpRight className="h-5 w-5 text-income shrink-0" />
+                    ) : (
+                      <ArrowDownRight className="h-5 w-5 text-expense shrink-0" />
                     )}
-                  >
-                    {formatCurrency(s.projected_end_balance, currency)}
-                  </p>
-                </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Balance actual</p>
+                      <p
+                        className={cn(
+                          "text-lg font-bold tabular-nums",
+                          overview.data.balance >= 0 ? "text-income" : "text-expense"
+                        )}
+                      >
+                        {formatCurrency(overview.data.balance, currency)}
+                      </p>
+                    </div>
+                  </>
+                ) : data && s ? (
+                  <>
+                    {s.projected_end_balance >= 0 ? (
+                      <ArrowUpRight className="h-5 w-5 text-income shrink-0" />
+                    ) : (
+                      <ArrowDownRight className="h-5 w-5 text-expense shrink-0" />
+                    )}
+                    <div>
+                      <p className="text-xs text-muted-foreground">Saldo proyectado fin de mes</p>
+                      <p
+                        className={cn(
+                          "text-lg font-bold tabular-nums",
+                          s.projected_end_balance >= 0 ? "text-income" : "text-expense"
+                        )}
+                      >
+                        {formatCurrency(s.projected_end_balance, currency)}
+                      </p>
+                    </div>
+                  </>
+                ) : (
+                  <Skeleton className="h-12 w-36" />
+                )}
               </div>
             </div>
           </CardContent>
@@ -371,91 +408,123 @@ export default function DashboardPage() {
 
         {/* ── Fila 2: KPI Cards ─────────────────────────────────── */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* Ingresos */}
-          <Card className="card-base">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-1.5 mb-1">
-                <TrendingUp className="h-3.5 w-3.5 text-income" />
-                <p className="text-xs font-medium text-muted-foreground">Ingresos</p>
-              </div>
-              <p className="text-lg font-bold tabular-nums text-foreground leading-tight">
-                {formatCurrency(s.total_actual_income, currency)}
-              </p>
-              <p className="text-xs text-muted-foreground mb-2 tabular-nums">
-                de {formatCurrency(s.total_planned_income, currency)}
-              </p>
-              <Progress value={Math.min(s.income_progress, 100)} className="h-1.5" />
-              <p className="text-xs text-income mt-1 tabular-nums">
-                {Math.round(s.income_progress)}%
-              </p>
-            </CardContent>
-          </Card>
+          {isLoading || !data || !s ? (
+            Array.from({ length: 4 }).map((_, i) => (
+              <Card key={i} className="card-base">
+                <CardContent className="p-4 space-y-2">
+                  <Skeleton className="h-3 w-20" />
+                  <Skeleton className="h-7 w-28" />
+                  <Skeleton className="h-2 w-full" />
+                </CardContent>
+              </Card>
+            ))
+          ) : (
+            <>
+              {/* Ingresos */}
+              <Card className="card-base">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <TrendingUp className="h-3.5 w-3.5 text-income" />
+                    <p className="text-xs font-medium text-muted-foreground">Ingresos</p>
+                  </div>
+                  <p className="text-lg font-bold tabular-nums text-foreground leading-tight">
+                    {formatCurrency(s.total_actual_income, currency)}
+                  </p>
+                  <p className="text-xs text-muted-foreground mb-2 tabular-nums">
+                    de {formatCurrency(s.total_planned_income, currency)}
+                  </p>
+                  <Progress value={Math.min(s.income_progress, 100)} className="h-1.5" />
+                  <p className="text-xs text-income mt-1 tabular-nums">
+                    {Math.round(s.income_progress)}%
+                  </p>
+                </CardContent>
+              </Card>
 
-          {/* Gastos */}
-          <Card className="card-base">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-1.5 mb-1">
-                <TrendingDown className="h-3.5 w-3.5 text-expense" />
-                <p className="text-xs font-medium text-muted-foreground">Gastos</p>
-              </div>
-              <p className="text-lg font-bold tabular-nums text-foreground leading-tight">
-                {formatCurrency(s.total_actual_expenses, currency)}
-              </p>
-              <p className="text-xs text-muted-foreground mb-2 tabular-nums">
-                de {formatCurrency(s.total_planned_expenses, currency)}
-              </p>
-              <Progress value={Math.min(s.expense_progress, 100)} className="h-1.5" />
-              <p
-                className={cn(
-                  "text-xs mt-1 tabular-nums",
-                  s.expense_progress > 100 ? "text-expense" : "text-warning"
-                )}
-              >
-                {Math.round(s.expense_progress)}%
-              </p>
-            </CardContent>
-          </Card>
+              {/* Gastos */}
+              <Card className="card-base">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <TrendingDown className="h-3.5 w-3.5 text-expense" />
+                    <p className="text-xs font-medium text-muted-foreground">Gastos</p>
+                  </div>
+                  <p className="text-lg font-bold tabular-nums text-foreground leading-tight">
+                    {formatCurrency(s.total_actual_expenses, currency)}
+                  </p>
+                  <p className="text-xs text-muted-foreground mb-2 tabular-nums">
+                    de {formatCurrency(s.total_planned_expenses, currency)}
+                  </p>
+                  <Progress value={Math.min(s.expense_progress, 100)} className="h-1.5" />
+                  <p
+                    className={cn(
+                      "text-xs mt-1 tabular-nums",
+                      s.expense_progress > 100 ? "text-expense" : "text-warning"
+                    )}
+                  >
+                    {Math.round(s.expense_progress)}%
+                  </p>
+                </CardContent>
+              </Card>
 
-          {/* Balance Actual */}
-          <Card className="card-base">
-            <CardContent className="p-4">
-              <p className="text-xs font-medium text-muted-foreground mb-1">Balance Actual</p>
-              <p
-                className={cn(
-                  "text-lg font-bold tabular-nums leading-tight",
-                  s.actual_balance >= 0 ? "text-income" : "text-expense"
-                )}
-              >
-                {formatCurrency(s.actual_balance, currency)}
-              </p>
-              <p className="text-xs text-muted-foreground mt-2 tabular-nums">
-                Planificado: {formatCurrency(s.planned_balance, currency)}
-              </p>
-            </CardContent>
-          </Card>
+              {/* Balance Actual */}
+              <Card className="card-base">
+                <CardContent className="p-4">
+                  <p className="text-xs font-medium text-muted-foreground mb-1">Balance Actual</p>
+                  <p
+                    className={cn(
+                      "text-lg font-bold tabular-nums leading-tight",
+                      s.actual_balance >= 0 ? "text-income" : "text-expense"
+                    )}
+                  >
+                    {formatCurrency(s.actual_balance, currency)}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-2 tabular-nums">
+                    Planificado: {formatCurrency(s.planned_balance, currency)}
+                  </p>
+                </CardContent>
+              </Card>
 
-          {/* Disponible */}
-          <Card className="card-base">
-            <CardContent className="p-4">
-              <p className="text-xs font-medium text-muted-foreground mb-1">Disponible</p>
-              <p
-                className={cn(
-                  "text-lg font-bold tabular-nums leading-tight",
-                  s.available_to_spend >= 0 ? "text-income" : "text-expense"
-                )}
-              >
-                {formatCurrency(s.available_to_spend, currency)}
-              </p>
-              <p className="text-xs text-muted-foreground mt-2">para gastar</p>
-            </CardContent>
-          </Card>
+              {/* Disponible */}
+              <Card className="card-base">
+                <CardContent className="p-4">
+                  <p className="text-xs font-medium text-muted-foreground mb-1">Disponible</p>
+                  <p
+                    className={cn(
+                      "text-lg font-bold tabular-nums leading-tight",
+                      s.available_to_spend >= 0 ? "text-income" : "text-expense"
+                    )}
+                  >
+                    {formatCurrency(s.available_to_spend, currency)}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-2">para gastar</p>
+                </CardContent>
+              </Card>
+            </>
+          )}
         </div>
 
         {/* ── Fila 3: Alertas ───────────────────────────────────── */}
-        {data.alerts.length > 0 && <AlertsSection alerts={data.alerts} />}
+        {data?.alerts && data.alerts.length > 0 && <AlertsSection alerts={data.alerts} />}
 
         {/* ── Fila 4: Gastos por Categoría ──────────────────────── */}
-        <ExpensesByCategory categories={data.expenses_by_category} currency={currency} />
+        {isLoading || !data ? (
+          <Card className="card-base">
+            <CardContent className="p-4 space-y-4">
+              <Skeleton className="h-4 w-40" />
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-3">
+                  <Skeleton className="h-8 w-8 rounded-full" />
+                  <div className="flex-1 space-y-1">
+                    <Skeleton className="h-3 w-28" />
+                    <Skeleton className="h-2 w-full" />
+                  </div>
+                  <Skeleton className="h-4 w-16" />
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        ) : (
+          <ExpensesByCategory categories={data.expenses_by_category} currency={currency} />
+        )}
 
         {/* ── Fila 5: Transacciones + Gráfica ───────────────────── */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -471,7 +540,20 @@ export default function DashboardPage() {
               </Link>
             </div>
             <CardContent className="px-4 pt-4 pb-4">
-              {data.recent_transactions.length === 0 ? (
+              {isLoading || !data ? (
+                <div className="space-y-3">
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <div key={i} className="flex items-center gap-3">
+                      <Skeleton className="h-8 w-8 rounded-full shrink-0" />
+                      <div className="flex-1 space-y-1">
+                        <Skeleton className="h-3 w-28" />
+                        <Skeleton className="h-2 w-16" />
+                      </div>
+                      <Skeleton className="h-4 w-20 shrink-0" />
+                    </div>
+                  ))}
+                </div>
+              ) : data.recent_transactions.length === 0 ? (
                 <p className="text-sm text-muted-foreground text-center py-6">
                   Sin transacciones recientes
                 </p>
@@ -506,45 +588,49 @@ export default function DashboardPage() {
               <h3 className="text-sm font-semibold text-foreground">Ingresos vs Gastos</h3>
             </div>
             <CardContent className="px-4 pt-4 pb-4">
-              <ResponsiveContainer width="100%" height={220}>
-                <BarChart
-                  data={chartData}
-                  margin={{ top: 4, right: 4, left: 0, bottom: 4 }}
-                  barSize={32}
-                >
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
-                  <XAxis
-                    dataKey="name"
-                    tick={{ fontSize: 12 }}
-                    tickLine={false}
-                    axisLine={false}
-                  />
-                  <YAxis
-                    tickFormatter={compactNumber}
-                    tick={{ fontSize: 11 }}
-                    tickLine={false}
-                    axisLine={false}
-                    width={48}
-                  />
-                  <Tooltip
-                    formatter={(value) => [
-                      formatCurrency(value as number, currency),
-                      "",
-                    ]}
-                    cursor={{ fill: "rgba(0,0,0,0.04)" }}
-                  />
-                  <Legend iconSize={10} wrapperStyle={{ fontSize: 12 }} />
-                  <Bar dataKey="Planificado" fill="#6366f1" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="Real" radius={[4, 4, 0, 0]}>
-                    {chartData.map((entry, index) => (
-                      <Cell
-                        key={`cell-${index}`}
-                        fill={entry.isIncome ? "#16a34a" : "#dc2626"}
-                      />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
+              {isLoading || !data || !s ? (
+                <Skeleton className="h-52 w-full" />
+              ) : (
+                <ResponsiveContainer width="100%" height={220} minWidth={1}>
+                  <BarChart
+                    data={chartData}
+                    margin={{ top: 4, right: 4, left: 0, bottom: 4 }}
+                    barSize={32}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
+                    <XAxis
+                      dataKey="name"
+                      tick={{ fontSize: 12 }}
+                      tickLine={false}
+                      axisLine={false}
+                    />
+                    <YAxis
+                      tickFormatter={compactNumber}
+                      tick={{ fontSize: 11 }}
+                      tickLine={false}
+                      axisLine={false}
+                      width={48}
+                    />
+                    <Tooltip
+                      formatter={(value) => [
+                        formatCurrency(value as number, currency),
+                        "",
+                      ]}
+                      cursor={{ fill: "rgba(0,0,0,0.04)" }}
+                    />
+                    <Legend iconSize={10} wrapperStyle={{ fontSize: 12 }} />
+                    <Bar dataKey="Planificado" fill="#6366f1" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="Real" radius={[4, 4, 0, 0]}>
+                      {chartData.map((entry, index) => (
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={entry.isIncome ? "#16a34a" : "#dc2626"}
+                        />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -552,87 +638,99 @@ export default function DashboardPage() {
         {/* ── Fila 6: Metas y Fondos (Tabs) ─────────────────────── */}
         <Card className="card-base">
           <CardContent className="p-4">
-            <Tabs defaultValue="goals">
-              <TabsList className="mb-4">
-                <TabsTrigger value="goals" className="gap-2">
-                  <Target className="h-4 w-4" />
-                  Metas de Ahorro
-                </TabsTrigger>
-                <TabsTrigger value="funds" className="gap-2">
-                  <PiggyBank className="h-4 w-4" />
-                  Fondos de Reserva
-                </TabsTrigger>
-              </TabsList>
+            {isLoading || !data ? (
+              <div className="space-y-3">
+                <div className="flex gap-3 mb-4">
+                  <Skeleton className="h-9 w-36" />
+                  <Skeleton className="h-9 w-36" />
+                </div>
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <Skeleton key={i} className="h-12 w-full" />
+                ))}
+              </div>
+            ) : (
+              <Tabs defaultValue="goals">
+                <TabsList className="mb-4">
+                  <TabsTrigger value="goals" className="gap-2">
+                    <Target className="h-4 w-4" />
+                    Metas de Ahorro
+                  </TabsTrigger>
+                  <TabsTrigger value="funds" className="gap-2">
+                    <PiggyBank className="h-4 w-4" />
+                    Fondos de Reserva
+                  </TabsTrigger>
+                </TabsList>
 
-              <TabsContent value="goals">
-                {data.goals_summary.goals.length === 0 ? (
-                  <p className="text-sm text-muted-foreground text-center py-4">
-                    Sin metas activas
-                  </p>
-                ) : (
-                  <div className="space-y-3">
-                    {data.goals_summary.goals.slice(0, 3).map((goal) => (
-                      <div key={goal.id} className="flex items-center gap-3">
-                        <CircularRing value={goal.progress_percentage} />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate">{goal.name}</p>
-                          <p className="text-xs text-muted-foreground tabular-nums">
-                            {formatCurrency(goal.current_saved, currency)} /{" "}
-                            {formatCurrency(goal.target_amount, currency)}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                    <Link
-                      href={ROUTES.goals}
-                      className="block text-center text-xs text-brand-600 hover:underline underline-offset-2 pt-1 [min-height:unset] [min-width:unset]"
-                    >
-                      Ver todas →
-                    </Link>
-                  </div>
-                )}
-              </TabsContent>
-
-              <TabsContent value="funds">
-                {data.sinking_funds_summary.funds.length === 0 ? (
-                  <p className="text-sm text-muted-foreground text-center py-4">
-                    Sin fondos de reserva
-                  </p>
-                ) : (
-                  <div className="space-y-3">
-                    {data.sinking_funds_summary.funds.slice(0, 3).map((fund) => {
-                      const pct =
-                        fund.expected_amount > 0
-                          ? Math.round((fund.current_saved / fund.expected_amount) * 100)
-                          : 0
-                      return (
-                        <div key={fund.id} className="flex items-center gap-3">
-                          <CircularRing value={pct} />
+                <TabsContent value="goals">
+                  {data.goals_summary.goals.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-4">
+                      Sin metas activas
+                    </p>
+                  ) : (
+                    <div className="space-y-3">
+                      {data.goals_summary.goals.slice(0, 3).map((goal) => (
+                        <div key={goal.id} className="flex items-center gap-3">
+                          <CircularRing value={goal.progress_percentage} />
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium truncate">{fund.name}</p>
+                            <p className="text-sm font-medium truncate">{goal.name}</p>
                             <p className="text-xs text-muted-foreground tabular-nums">
-                              {formatCurrency(fund.current_saved, currency)} /{" "}
-                              {formatCurrency(fund.expected_amount, currency)}
+                              {formatCurrency(goal.current_saved, currency)} /{" "}
+                              {formatCurrency(goal.target_amount, currency)}
                             </p>
                           </div>
                         </div>
-                      )
-                    })}
-                    <Link
-                      href={ROUTES.sinkingFunds}
-                      className="block text-center text-xs text-brand-600 hover:underline underline-offset-2 pt-1 [min-height:unset] [min-width:unset]"
-                    >
-                      Ver todos →
-                    </Link>
-                  </div>
-                )}
-              </TabsContent>
-            </Tabs>
+                      ))}
+                      <Link
+                        href={ROUTES.goals}
+                        className="block text-center text-xs text-brand-600 hover:underline underline-offset-2 pt-1 [min-height:unset] [min-width:unset]"
+                      >
+                        Ver todas →
+                      </Link>
+                    </div>
+                  )}
+                </TabsContent>
+
+                <TabsContent value="funds">
+                  {data.sinking_funds_summary.funds.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-4">
+                      Sin fondos de reserva
+                    </p>
+                  ) : (
+                    <div className="space-y-3">
+                      {data.sinking_funds_summary.funds.slice(0, 3).map((fund) => {
+                        const pct =
+                          fund.expected_amount > 0
+                            ? Math.round((fund.current_saved / fund.expected_amount) * 100)
+                            : 0
+                        return (
+                          <div key={fund.id} className="flex items-center gap-3">
+                            <CircularRing value={pct} />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium truncate">{fund.name}</p>
+                              <p className="text-xs text-muted-foreground tabular-nums">
+                                {formatCurrency(fund.current_saved, currency)} /{" "}
+                                {formatCurrency(fund.expected_amount, currency)}
+                              </p>
+                            </div>
+                          </div>
+                        )
+                      })}
+                      <Link
+                        href={ROUTES.sinkingFunds}
+                        className="block text-center text-xs text-brand-600 hover:underline underline-offset-2 pt-1 [min-height:unset] [min-width:unset]"
+                      >
+                        Ver todos →
+                      </Link>
+                    </div>
+                  )}
+                </TabsContent>
+              </Tabs>
+            )}
           </CardContent>
         </Card>
 
         {/* ── Fila 7: Recomendaciones ───────────────────────────── */}
-        {data.recommendations.length > 0 && (
+        {data?.recommendations && data.recommendations.length > 0 && (
           <Card className="card-base">
             <div className="px-4 pt-4 pb-2 flex items-center gap-2 border-b border-border/50">
               <Lightbulb className="h-4 w-4 text-warning shrink-0" />

@@ -1,6 +1,6 @@
 import { useMonthContext } from "@/lib/context/month.context"
 import { formatMonth } from "@/lib/utils/format"
-import { ChevronLeft, ChevronRight, Plus } from "lucide-react"
+import { ChevronLeft, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
@@ -17,7 +17,6 @@ interface TransactionFiltersProps {
   setType: (type: string) => void
   category: string
   setCategory: (category: string) => void
-  onNewTransaction: () => void
 }
 
 export function TransactionFilters({
@@ -25,7 +24,6 @@ export function TransactionFilters({
   setType,
   category,
   setCategory,
-  onNewTransaction,
 }: TransactionFiltersProps) {
   const { month, prevMonth, nextMonth, isCurrentMonth } = useMonthContext()
   const { data: categories } = useCategories()
@@ -82,11 +80,6 @@ export function TransactionFilters({
           </SelectContent>
         </Select>
       </div>
-
-      <Button onClick={onNewTransaction} className="gap-2 shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]">
-        <Plus className="h-4 w-4" />
-        Nueva transacción
-      </Button>
     </div>
   )
 }

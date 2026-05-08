@@ -1,67 +1,40 @@
-export const CATEGORY_LABELS: Record<string, string> = {
-  // Income
-  salary: "Salario",
-  freelance: "Freelance",
-  business: "Negocios",
-  investments: "Inversiones",
-  rental: "Alquiler",
-  bonus: "Bonificación",
-  gift: "Regalo",
-  other_income: "Otros Ingresos",
-  
-  // Expenses
-  food: "Comida",
-  transport: "Transporte",
-  housing: "Vivienda",
-  utilities: "Servicios",
-  entertainment: "Entretenimiento",
-  health: "Salud",
-  education: "Educación",
-  shopping: "Compras",
-  subscriptions: "Suscripciones",
-  insurance: "Seguros",
-  debt: "Deudas",
-  pets: "Mascotas",
-  personal_care: "Cuidado Personal",
-  gifts: "Regalos",
-  savings: "Ahorro",
-  other: "Otros",
+const CATEGORY_MAP: Record<string, { name: string; icon: string }> = {
+  food:          { name: "Comida",           icon: "🍔" },
+  transport:     { name: "Transporte",       icon: "🚗" },
+  housing:       { name: "Vivienda",         icon: "🏠" },
+  utilities:     { name: "Servicios",        icon: "💡" },
+  entertainment: { name: "Entretenimiento",  icon: "🎬" },
+  health:        { name: "Salud",            icon: "🏥" },
+  education:     { name: "Educación",        icon: "📚" },
+  shopping:      { name: "Compras",          icon: "🛍️" },
+  subscriptions: { name: "Suscripciones",   icon: "📱" },
+  insurance:     { name: "Seguros",          icon: "🛡️" },
+  debt:          { name: "Deudas",           icon: "💳" },
+  pets:          { name: "Mascotas",         icon: "🐾" },
+  personal_care: { name: "Cuidado Personal", icon: "💆" },
+  gifts:         { name: "Regalos",          icon: "🎁" },
+  savings:       { name: "Ahorros",          icon: "💰" },
+  other:         { name: "Otros Gastos",     icon: "📦" },
+  salary:        { name: "Salario",          icon: "💼" },
+  freelance:     { name: "Freelance",        icon: "💻" },
+  business:      { name: "Negocio",          icon: "🏢" },
+  investments:   { name: "Inversiones",      icon: "📈" },
+  rental:        { name: "Arriendos",        icon: "🏘️" },
+  bonus:         { name: "Bonos",            icon: "🎯" },
+  gift:          { name: "Regalo",           icon: "🎀" },
+  other_income:  { name: "Otros Ingresos",   icon: "💹" },
 }
 
-export const CATEGORY_ICONS: Record<string, string> = {
-  // Income
-  salary: "💼",
-  freelance: "💻",
-  business: "🏢",
-  investments: "📈",
-  rental: "🏠",
-  bonus: "🎊",
-  gift: "🎁",
-  other_income: "💰",
-  
-  // Expenses
-  food: "🍔",
-  transport: "🚗",
-  housing: "🏠",
-  utilities: "⚡",
-  entertainment: "🎮",
-  health: "🏥",
-  education: "📚",
-  shopping: "🛍️",
-  subscriptions: "📱",
-  insurance: "🛡️",
-  debt: "💸",
-  pets: "🐾",
-  personal_care: "✨",
-  gifts: "🎁",
-  savings: "🏦",
-  other: "📁",
-}
-
-export function getCategoryLabel(id: string): string {
-  return CATEGORY_LABELS[id] || id
+export function getCategoryName(id: string): string {
+  if (id.startsWith("custom_")) return id.replace("custom_", "").replace(/_/g, " ")
+  return CATEGORY_MAP[id]?.name ?? id
 }
 
 export function getCategoryIcon(id: string): string {
-  return CATEGORY_ICONS[id] || "❓"
+  if (id.startsWith("custom_")) return "✏️"
+  return CATEGORY_MAP[id]?.icon ?? "❓"
+}
+
+export function getCategoryLabel(id: string): string {
+  return `${getCategoryIcon(id)} ${getCategoryName(id)}`
 }

@@ -29,7 +29,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { CATEGORY_LABELS } from "@/lib/utils/categories"
+import { getCategoryName } from "@/lib/utils/categories"
 import { useCategories } from "@/lib/api/endpoints/categories"
 
 const formSchema = z.object({
@@ -37,6 +37,9 @@ const formSchema = z.object({
   amount: z.number().positive("El monto debe ser mayor a 0"),
   category: z.string().min(1, "La categoría es requerida"),
   currency: z.string().min(1, "La moneda es requerida"),
+  recurrence_day: z.number().int().min(1).max(31).optional().nullable(),
+  start_month: z.string().optional(),
+  end_month: z.string().optional().nullable(),
 })
 
 type FormValues = z.infer<typeof formSchema>
@@ -44,13 +47,16 @@ type FormValues = z.infer<typeof formSchema>
 interface BudgetFormSheetProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  type: "income" | "fixed" | "variable"
+  type: "income" | "income-variable" | "fixed" | "variable"
   item?: {
     id: string
     name: string
     amount: number
     category: string
     currency: string
+    recurrence_day?: number | null
+    start_month?: string
+    end_month?: string | null
   }
   onSubmit: (values: FormValues) => Promise<void>
   isSubmitting: boolean
@@ -65,9 +71,10 @@ export function BudgetFormSheet({
   isSubmitting,
 }: BudgetFormSheetProps) {
   const { data: categoriesData } = useCategories()
-  
-  const categories = type === "income" 
-    ? categoriesData?.income_categories 
+
+  const isIncomeType = type === "income" || type === "income-variable"
+  const categories = isIncomeType
+    ? categoriesData?.income_categories
     : categoriesData?.expense_categories
 
   const form = useForm<FormValues>({
@@ -77,6 +84,9 @@ export function BudgetFormSheet({
       amount: 0,
       category: "",
       currency: "COP",
+      recurrence_day: null,
+      start_month: "",
+      end_month: null,
     },
   })
 
@@ -87,6 +97,9 @@ export function BudgetFormSheet({
         amount: item.amount,
         category: item.category,
         currency: item.currency,
+        recurrence_day: item.recurrence_day ?? null,
+        start_month: item.start_month ?? "",
+        end_month: item.end_month ?? null,
       })
     } else {
       form.reset({
@@ -94,13 +107,23 @@ export function BudgetFormSheet({
         amount: 0,
         category: "",
         currency: "COP",
+        recurrence_day: null,
+        start_month: "",
+        end_month: null,
       })
     }
   }, [item, form, open])
 
-  const title = item 
-    ? `Editar ${type === "income" ? "Ingreso" : "Gasto"}`
-    : `Añadir ${type === "income" ? "Ingreso" : type === "fixed" ? "Gasto Fijo" : "Gasto Variable"}`
+  const typeLabel = {
+    "income": "Ingreso Fijo",
+    "income-variable": "Ingreso Variable",
+    "fixed": "Gasto Fijo",
+    "variable": "Gasto Variable",
+  }[type]
+
+  const title = item ? `Editar ${isIncomeType ? "Ingreso" : "Gasto"}` : `Añadir ${typeLabel}`
+
+  const showRecurrenceFields = type === "income" || type === "fixed"
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -108,7 +131,7 @@ export function BudgetFormSheet({
         <SheetHeader>
           <SheetTitle>{title}</SheetTitle>
           <SheetDescription>
-            Configura los detalles de tu {type === "income" ? "ingreso" : "gasto"} planificado.
+            Configura los detalles de tu {isIncomeType ? "ingreso" : "gasto"} planificado.
           </SheetDescription>
         </SheetHeader>
 
@@ -163,7 +186,7 @@ export function BudgetFormSheet({
                     <SelectContent>
                       {categories?.map((cat) => (
                         <SelectItem key={cat.id} value={cat.id}>
-                          {cat.icon} {CATEGORY_LABELS[cat.id] || cat.name_es}
+                          {cat.icon} {getCategoryName(cat.id) || cat.name_es}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -197,6 +220,64 @@ export function BudgetFormSheet({
                 </FormItem>
               )}
             />
+
+            {showRecurrenceFields && (
+              <>
+                <FormField
+                  control={form.control}
+                  name="recurrence_day"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Día del mes (opcional)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min={1}
+                          max={31}
+                          placeholder="Ej. 30 (día en que llega o vence)"
+                          value={field.value ?? ""}
+                          onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : null)}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="start_month"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Desde (opcional)</FormLabel>
+                        <FormControl>
+                          <Input type="month" {...field} value={field.value ?? ""} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="end_month"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Hasta (opcional)</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="month"
+                            value={field.value ?? ""}
+                            onChange={(e) => field.onChange(e.target.value || null)}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </>
+            )}
 
             <SheetFooter className="pt-4">
               <Button type="submit" className="w-full" disabled={isSubmitting}>

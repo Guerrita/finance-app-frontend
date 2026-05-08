@@ -7,11 +7,8 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { formatCurrency } from "@/lib/utils/format"
 import { GOAL_TYPES } from "./GoalForm"
-import { 
-  Plus, Pencil, Trash2, Calendar, 
-  ChevronRight, AlertCircle, CheckCircle2 
-} from "lucide-react"
-import { format, parseISO, differenceInMonths } from "date-fns"
+import { Plus, Pencil, Trash2, Calendar } from "lucide-react"
+import { format, differenceInMonths } from "date-fns"
 import { es } from "date-fns/locale"
 import { cn } from "@/lib/utils"
 
@@ -32,7 +29,7 @@ export function GoalCard({
   const Icon = goalTypeInfo.icon
 
   // Calculate months remaining
-  const targetDate = goal.target_date ? parseISO(goal.target_date) : new Date()
+  const targetDate = goal.target_date ? new Date(goal.target_date * 1000) : new Date()
   const monthsRemaining = differenceInMonths(targetDate, new Date())
   
   // For "On track" logic - this would ideally come from getProgress but we can mock/estimate here

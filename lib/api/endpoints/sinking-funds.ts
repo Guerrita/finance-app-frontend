@@ -1,6 +1,8 @@
 import { apiClient } from "@/lib/api/client"
 import type { ApiResponse, SinkingFund } from "@/types/api"
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { usePaginated } from "@/lib/hooks/usePaginated"
+import { QUERY_KEYS } from "@/lib/utils/constants"
 
 export interface CreateSinkingFundDto {
   name: string
@@ -60,9 +62,11 @@ export const sinkingFundsApi = {
 }
 
 export const useSinkingFunds = () => {
-  return useQuery({
-    queryKey: ["sinking-funds"],
-    queryFn: sinkingFundsApi.list,
+  return usePaginated<SinkingFund>({
+    queryKey: QUERY_KEYS.sinkingFunds(),
+    url: "/sinking-funds",
+    dataKey: "funds",
+    pageSize: 12,
   })
 }
 
@@ -71,7 +75,7 @@ export const useCreateSinkingFund = () => {
   return useMutation({
     mutationFn: sinkingFundsApi.create,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["sinking-funds"] })
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.sinkingFunds() })
     },
   })
 }
@@ -81,7 +85,7 @@ export const useUpdateSinkingFund = () => {
   return useMutation({
     mutationFn: sinkingFundsApi.update,
     onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: ["sinking-funds"] })
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.sinkingFunds() })
       queryClient.invalidateQueries({ queryKey: ["sinking-funds", id] })
     },
   })
@@ -92,7 +96,7 @@ export const useDeleteSinkingFund = () => {
   return useMutation({
     mutationFn: sinkingFundsApi.delete,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["sinking-funds"] })
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.sinkingFunds() })
     },
   })
 }
@@ -102,7 +106,7 @@ export const useAddSinkingFundContribution = () => {
   return useMutation({
     mutationFn: sinkingFundsApi.addContribution,
     onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: ["sinking-funds"] })
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.sinkingFunds() })
       queryClient.invalidateQueries({ queryKey: ["sinking-funds", id] })
     },
   })

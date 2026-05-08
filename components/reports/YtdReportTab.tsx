@@ -159,8 +159,7 @@ export function YtdReportTab() {
           <CardTitle className="text-base font-semibold text-slate-700">Evolución Mensual</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="h-72">
-            <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer width="100%" height={288} minWidth={1}>
               <LineChart data={lineChartData} margin={{ top: 4, right: 16, left: 0, bottom: 4 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                 <XAxis dataKey="name" tick={{ fontSize: 11 }} />
@@ -192,8 +191,7 @@ export function YtdReportTab() {
                   activeDot={{ r: 5 }}
                 />
               </LineChart>
-            </ResponsiveContainer>
-          </div>
+          </ResponsiveContainer>
         </CardContent>
       </Card>
 
@@ -205,8 +203,8 @@ export function YtdReportTab() {
           </CardHeader>
           <CardContent>
             <div className="flex flex-col lg:flex-row gap-6 items-start">
-              <div className="h-64 w-full lg:w-80 flex-shrink-0">
-                <ResponsiveContainer width="100%" height="100%">
+              <div className="w-full lg:w-80 flex-shrink-0">
+                <ResponsiveContainer width="100%" height={256} minWidth={1}>
                   <BarChart
                     layout="vertical"
                     data={topCategoriesData}
@@ -232,7 +230,7 @@ export function YtdReportTab() {
                   </BarChart>
                 </ResponsiveContainer>
               </div>
-              <div className="overflow-x-auto w-full">
+              <div className="overflow-x-auto w-full pt-2">
                 <table className="w-full text-sm min-w-[320px]">
                   <thead>
                     <tr className="border-b border-slate-100">
