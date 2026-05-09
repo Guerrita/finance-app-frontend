@@ -26,7 +26,7 @@ import {
 
 import { useMonthContext } from "@/lib/context/month.context"
 
-export function ExpensesTab() {
+export function ExpensesTab({ currency = "COP" }: { currency?: string }) {
   const { month } = useMonthContext()
   const { items: rawFixed, isLoading: loadingFixed, hasMore: hasMoreFixed, onLoadMore: loadMoreFixed, isFetching: fetchingFixed } = useExpensesFixed()
   const { items: rawVariable, isLoading: loadingVariable, hasMore: hasMoreVariable, onLoadMore: loadMoreVariable, isFetching: fetchingVariable } = useExpensesVariable(month)
@@ -107,7 +107,7 @@ export function ExpensesTab() {
                 <h3 className="text-lg font-bold">Gastos Fijos</h3>
                 <p className="text-sm text-muted-foreground">Recurrentes (renta, servicios)</p>
               </div>
-              <p className="text-xl font-bold">{formatCurrency(totalFixed)}</p>
+              <p className="text-xl font-bold">{formatCurrency(totalFixed, currency)}</p>
             </div>
           </AccordionTrigger>
           <AccordionContent className="pt-2 pb-6 space-y-4">
@@ -122,6 +122,7 @@ export function ExpensesTab() {
                 <ExpenseItem
                   key={item.id}
                   item={item}
+                  currency={currency}
                   onEdit={() => handleEdit(item, "fixed")}
                   onDelete={() => setDeletingItem({id: item.id, type: "fixed"})}
                 />
@@ -146,7 +147,7 @@ export function ExpensesTab() {
                 <h3 className="text-lg font-bold">Gastos Variables</h3>
                 <p className="text-sm text-muted-foreground">Ocasionales (comida, cine)</p>
               </div>
-              <p className="text-xl font-bold">{formatCurrency(totalVariable)}</p>
+              <p className="text-xl font-bold">{formatCurrency(totalVariable, currency)}</p>
             </div>
           </AccordionTrigger>
           <AccordionContent className="pt-2 pb-6 space-y-4">
@@ -161,6 +162,7 @@ export function ExpensesTab() {
                 <ExpenseItem
                   key={item.id}
                   item={item}
+                  currency={currency}
                   onEdit={() => handleEdit(item, "variable")}
                   onDelete={() => setDeletingItem({id: item.id, type: "variable"})}
                 />
@@ -207,7 +209,7 @@ export function ExpensesTab() {
   )
 }
 
-function ExpenseItem({ item, onEdit, onDelete }: { item: any, onEdit: () => void, onDelete: () => void }) {
+function ExpenseItem({ item, currency, onEdit, onDelete }: { item: any, currency: string, onEdit: () => void, onDelete: () => void }) {
   return (
     <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg border group hover:border-primary/50 transition-colors">
       <div className="flex items-center gap-3">
@@ -218,7 +220,7 @@ function ExpenseItem({ item, onEdit, onDelete }: { item: any, onEdit: () => void
         </div>
       </div>
       <div className="flex items-center gap-4">
-        <p className="font-semibold">{formatCurrency(item.amount, item.currency)}</p>
+        <p className="font-semibold">{formatCurrency(item.amount, item.currency ?? currency)}</p>
         <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onEdit}>
             <Edit2 size={14} className="text-muted-foreground" />

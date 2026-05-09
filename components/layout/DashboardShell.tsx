@@ -33,7 +33,7 @@ export function DashboardShell({ children }: DashboardShellProps) {
   return (
     <div className="flex min-h-screen bg-surface-subtle">
       {/* Sidebar Desktop */}
-      <Sidebar className="hidden lg:flex" />
+      <Sidebar className="hidden lg:flex h-screen sticky top-0" />
 
       {/* Sidebar Mobile (Drawer) */}
       <div
@@ -51,11 +51,11 @@ export function DashboardShell({ children }: DashboardShellProps) {
         {/* Drawer content */}
         <div
           className={cn(
-            "absolute inset-y-0 left-0 w-64 bg-slate-900 transition-transform duration-300 ease-in-out",
+            "absolute inset-y-0 left-0 w-64 flex flex-col bg-slate-900 transition-transform duration-300 ease-in-out",
             isSidebarOpen ? "translate-x-0" : "-translate-x-full"
           )}
         >
-          <Sidebar className="w-full h-full" />
+          <Sidebar className="flex-1 w-full min-h-0" />
         </div>
       </div>
 

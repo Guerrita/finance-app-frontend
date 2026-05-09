@@ -9,6 +9,7 @@ import Link from 'next/link'
 import { Eye, EyeOff, Loader2 } from 'lucide-react'
 import { useAuthStore } from '@/store/auth.store'
 import { authApi } from '@/lib/api/endpoints/auth'
+import { usersApi } from '@/lib/api/endpoints/users'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -42,12 +43,13 @@ export function LoginForm() {
         return
       }
       const { id_token, access_token, refresh_token, user } = payload.data
-      setTokens({ 
-        idToken: id_token, 
-        accessToken: access_token, 
-        refreshToken: refresh_token 
+      setTokens({
+        idToken: id_token,
+        accessToken: access_token,
+        refreshToken: refresh_token
       })
-      setUser(user)
+      const resolvedUser = user ?? await usersApi.me()
+      setUser(resolvedUser)
       router.replace('/dashboard')
     } catch (e: unknown) {
       const err = e as { response?: { data?: { error?: { message?: string } } } }

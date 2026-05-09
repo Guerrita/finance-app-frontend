@@ -7,7 +7,7 @@ import {
   ArrowLeftRight,
   PieChart,
   Target,
-  BarChart3,
+  CircleUser,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { ROUTES } from "@/lib/utils/constants"
@@ -17,7 +17,7 @@ const navItems = [
   { href: ROUTES.transactions, label: "Movimientos",    Icon: ArrowLeftRight },
   { href: ROUTES.budget,       label: "Presupuesto",    Icon: PieChart },
   { href: ROUTES.goals,        label: "Metas",          Icon: Target },
-  { href: ROUTES.reports,      label: "Reportes",       Icon: BarChart3 },
+  { href: ROUTES.settings,     label: "Perfil",         Icon: CircleUser },
 ]
 
 interface BottomNavProps {

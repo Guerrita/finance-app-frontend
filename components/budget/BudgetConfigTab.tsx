@@ -12,7 +12,6 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Slider } from "@/components/ui/slider"
 import {
@@ -25,6 +24,7 @@ import {
 import { useBudgetSetup, useUpdateBudgetSetup } from "@/lib/api/endpoints/budget"
 import { useEffect } from "react"
 import { toast } from "sonner"
+import { AmountInput } from "@/components/shared/AmountInput"
 
 const configSchema = z.object({
   currency: z.string().min(1),
@@ -117,11 +117,11 @@ export function BudgetConfigTab() {
                 <FormItem>
                   <FormLabel>Meta de ingreso mensual</FormLabel>
                   <FormControl>
-                    <Input
-                      type="number"
-                      step="any"
-                      {...field}
-                      onChange={(e) => field.onChange(Number(e.target.value))}
+                    <AmountInput
+                      currency={form.watch("currency")}
+                      value={field.value}
+                      onValueChange={(val) => field.onChange(val ?? 0)}
+                      placeholder="0"
                     />
                   </FormControl>
                   <FormMessage />

@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/select"
 import { getCategoryName } from "@/lib/utils/categories"
 import { useCategories } from "@/lib/api/endpoints/categories"
+import { AmountInput } from "@/components/shared/AmountInput"
 
 const formSchema = z.object({
   name: z.string().min(1, "El nombre es requerido"),
@@ -158,12 +159,11 @@ export function BudgetFormSheet({
                 <FormItem>
                   <FormLabel>Monto</FormLabel>
                   <FormControl>
-                    <Input
-                      type="number"
-                      step="any"
-                      placeholder="0.00"
-                      {...field}
-                      onChange={(e) => field.onChange(Number(e.target.value))}
+                    <AmountInput
+                      currency={form.watch("currency")}
+                      value={field.value}
+                      onValueChange={(val) => field.onChange(val ?? 0)}
+                      placeholder="0"
                     />
                   </FormControl>
                   <FormMessage />

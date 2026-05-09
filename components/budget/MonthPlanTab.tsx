@@ -86,17 +86,17 @@ export function MonthPlanTab({ onGoToIncome }: MonthPlanTabProps) {
     income,
     fixed_expenses,
     variable_expenses,
-    goals: rawGoals,
+    savings_goals: rawGoals,
     sinking_funds: rawSinking,
   } = plan
 
   const goals = {
     items: rawGoals?.items ?? [],
-    total_monthly_contribution: rawGoals?.total_monthly_contribution ?? 0,
+    total_monthly_contribution: rawGoals?.total ?? 0,
   }
   const sinking_funds = {
     items: rawSinking?.items ?? [],
-    total_monthly_contribution: rawSinking?.total_monthly_contribution ?? 0,
+    total_monthly_contribution: rawSinking?.total ?? 0,
   }
 
   const totalSavings =
@@ -106,7 +106,7 @@ export function MonthPlanTab({ onGoToIncome }: MonthPlanTabProps) {
     ...goals.items.map((g: Goal) => ({
       id: g.id,
       name: g.name,
-      category: g.type as string,
+      category: (g.type as string) || "other",
       amount: g.monthly_contribution ?? 0,
       badge: "Meta" as const,
     })),
@@ -119,11 +119,11 @@ export function MonthPlanTab({ onGoToIncome }: MonthPlanTabProps) {
     })),
   ]
 
-  const chartData = projection?.monthly_projections?.map((p) => ({
+  const chartData = projection?.months?.map((p) => ({
     name: formatMonthLabel(p.month),
-    ingresos: p.income,
-    gastos: p.expenses,
-    ahorro: p.savings,
+    ingresos: p.total_income,
+    gastos: p.total_expenses,
+    ahorro: p.total_savings,
     acumulado: p.cumulative_savings,
   })) ?? []
 
@@ -156,7 +156,7 @@ export function MonthPlanTab({ onGoToIncome }: MonthPlanTabProps) {
 
         <div className="flex flex-wrap gap-2 mt-3">
           <span className="inline-flex items-center rounded-full bg-muted px-3 py-1 text-xs font-medium text-muted-foreground">
-            Tasa de ahorro: {summary.savings_rate.toFixed(1)}%
+            Tasa de ahorro: {(summary.savings_rate * 100).toFixed(1)}%
           </span>
           {summary.is_deficit && (
             <span className="inline-flex items-center rounded-full bg-destructive/10 px-3 py-1 text-xs font-medium text-destructive">
@@ -214,7 +214,7 @@ export function MonthPlanTab({ onGoToIncome }: MonthPlanTabProps) {
               id: e.id,
               name: e.name,
               category: e.category,
-              amount: e.amount,
+              amount: e.estimated_amount ?? e.amount ?? 0,
             }))}
             currency={currency}
           />
@@ -353,15 +353,15 @@ export function MonthPlanTab({ onGoToIncome }: MonthPlanTabProps) {
               <div className="grid grid-cols-3 gap-4 pt-3 border-t">
                 <StatCard
                   label="Ingreso promedio"
-                  value={formatCurrency(projection.summary?.avg_monthly_income ?? 0, currency)}
+                  value={formatCurrency(projection.summary?.total_income_projected ?? 0, currency)}
                 />
                 <StatCard
                   label="Gasto promedio"
-                  value={formatCurrency(projection.summary?.avg_monthly_expenses ?? 0, currency)}
+                  value={formatCurrency(projection.summary?.total_expenses_projected ?? 0, currency)}
                 />
                 <StatCard
                   label="Ahorro proyectado total"
-                  value={formatCurrency(projection.summary?.total_projected_savings ?? 0, currency)}
+                  value={formatCurrency(projection.summary?.total_savings_projected ?? 0, currency)}
                 />
               </div>
             )}

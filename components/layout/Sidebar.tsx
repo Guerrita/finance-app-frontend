@@ -40,7 +40,7 @@ export function Sidebar({ className }: SidebarProps) {
   return (
     <aside
       className={cn(
-        "w-60 h-screen shrink-0 flex-col bg-slate-900 text-white sticky top-0 overflow-y-auto",
+        "w-60 shrink-0 flex flex-col bg-slate-900 text-white overflow-y-auto",
         className
       )}
     >
@@ -91,9 +91,7 @@ export function Sidebar({ className }: SidebarProps) {
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-white truncate">{user.name}</p>
-              <p className="text-xs text-slate-400 truncate">
-                {user.preferred_currency} • configuración
-              </p>
+              <p className="text-xs text-slate-400 truncate">Perfil</p>
             </div>
             <Settings className="h-3.5 w-3.5 text-slate-500 shrink-0" />
           </Link>

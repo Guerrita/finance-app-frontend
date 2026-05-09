@@ -61,6 +61,13 @@ apiClient.interceptors.response.use(
 
     try {
       const { refreshToken, user } = useAuthStore.getState()
+
+      if (!refreshToken || !user?.user_id) {
+        useAuthStore.getState().logout()
+        window.location.href = "/login"
+        return Promise.reject(error)
+      }
+
       const { data } = await axios.post(
         `${env.NEXT_PUBLIC_API_URL}/auth/refresh`,
         { 

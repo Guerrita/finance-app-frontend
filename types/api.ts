@@ -79,7 +79,8 @@ export interface IncomeVariable {
 export interface Expense {
   id: string
   name: string
-  amount: number
+  amount?: number
+  estimated_amount?: number
   category: string
   currency: string
   recurrence_day?: number | null
@@ -410,11 +411,12 @@ export interface IncomePlanSource {
 export interface MonthPlan {
   month: string;
   year: number;
+  currency: string;
   income: { sources: IncomePlanSource[]; total: number };
   fixed_expenses: { items: Expense[]; total: number };
   variable_expenses: { items: Expense[]; total: number };
-  goals: { items: Goal[]; total_monthly_contribution: number };
-  sinking_funds: { items: SinkingFund[]; total_monthly_contribution: number };
+  savings_goals: { items: Goal[]; total: number };
+  sinking_funds: { items: SinkingFund[]; total: number };
   summary: {
     total_income: number;
     total_expenses: number;
@@ -427,20 +429,43 @@ export interface MonthPlan {
 
 export interface MonthProjection {
   month: string;
-  income: number;
-  expenses: number;
-  savings: number;
+  total_income: number;
+  total_expenses: number;
+  total_savings: number;
+  available: number;
   cumulative_savings: number;
+  events: string[];
+}
+
+export interface GoalProjection {
+  id: string;
+  name: string;
+  target_amount: number;
+  monthly_contribution: number;
+  projected_completion_month: string;
+  will_complete_on_time: boolean;
+}
+
+export interface FundProjection {
+  id: string;
+  name: string;
+  expected_amount: number;
+  monthly_contribution: number;
+  projected_completion_month: string;
+  will_complete_on_time: boolean;
 }
 
 export interface Projection {
-  months_projected: number;
-  monthly_projections: MonthProjection[];
+  projection_months: number;
+  currency: string;
+  months: MonthProjection[];
+  goals_projection: GoalProjection[];
+  funds_projection: FundProjection[];
   summary: {
-    avg_monthly_income: number;
-    avg_monthly_expenses: number;
-    avg_savings_rate: number;
-    total_projected_savings: number;
+    total_income_projected: number;
+    total_expenses_projected: number;
+    total_savings_projected: number;
+    average_monthly_available: number;
   };
 }
 

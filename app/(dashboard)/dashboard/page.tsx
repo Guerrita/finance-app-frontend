@@ -29,7 +29,7 @@ import {
 
 import { useMonthContext } from "@/lib/context/month.context"
 import { useAuthStore } from "@/store/auth.store"
-import { useDashboard, useDashboardOverview } from "@/lib/api/endpoints/dashboard"
+import { useDashboard } from "@/lib/api/endpoints/dashboard"
 import { PageWrapper } from "@/components/layout/PageWrapper"
 import { ErrorState } from "@/components/shared/ErrorState"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -276,7 +276,6 @@ function ExpensesByCategory({
 
 export default function DashboardPage() {
   const { month } = useMonthContext()
-  const overview = useDashboardOverview()
   const { data, isLoading, isFetching, error } = useDashboard(month)
   const queryClient = useQueryClient()
   const currency = useAuthStore((s) => s.user?.preferred_currency ?? "COP")
@@ -298,7 +297,7 @@ export default function DashboardPage() {
     </Button>
   )
 
-  if (isLoading && !overview.data) {
+  if (isLoading) {
     return (
       <PageWrapper title="Dashboard" action={refreshBtn}>
         <DashboardSkeleton />
@@ -306,7 +305,7 @@ export default function DashboardPage() {
     )
   }
 
-  if (error || (!data && !overview.data)) {
+  if (error || !data) {
     return (
       <PageWrapper title="Dashboard">
         <ErrorState
@@ -363,26 +362,7 @@ export default function DashboardPage() {
                 )}
               </div>
               <div className="flex items-center gap-2">
-                {overview.data ? (
-                  <>
-                    {overview.data.balance >= 0 ? (
-                      <ArrowUpRight className="h-5 w-5 text-income shrink-0" />
-                    ) : (
-                      <ArrowDownRight className="h-5 w-5 text-expense shrink-0" />
-                    )}
-                    <div>
-                      <p className="text-xs text-muted-foreground">Balance actual</p>
-                      <p
-                        className={cn(
-                          "text-lg font-bold tabular-nums",
-                          overview.data.balance >= 0 ? "text-income" : "text-expense"
-                        )}
-                      >
-                        {formatCurrency(overview.data.balance, currency)}
-                      </p>
-                    </div>
-                  </>
-                ) : data && s ? (
+                {data && s ? (
                   <>
                     {s.projected_end_balance >= 0 ? (
                       <ArrowUpRight className="h-5 w-5 text-income shrink-0" />
@@ -390,7 +370,7 @@ export default function DashboardPage() {
                       <ArrowDownRight className="h-5 w-5 text-expense shrink-0" />
                     )}
                     <div>
-                      <p className="text-xs text-muted-foreground">Saldo proyectado fin de mes</p>
+                      <p className="text-xs text-muted-foreground">Proyección fin de mes (ritmo variable + fijos)</p>
                       <p
                         className={cn(
                           "text-lg font-bold tabular-nums",
@@ -471,7 +451,7 @@ export default function DashboardPage() {
               {/* Balance Actual */}
               <Card className="card-base">
                 <CardContent className="p-4">
-                  <p className="text-xs font-medium text-muted-foreground mb-1">Balance Actual</p>
+                  <p className="text-xs font-medium text-muted-foreground mb-1">Balance del mes</p>
                   <p
                     className={cn(
                       "text-lg font-bold tabular-nums leading-tight",
@@ -486,10 +466,10 @@ export default function DashboardPage() {
                 </CardContent>
               </Card>
 
-              {/* Disponible */}
+              {/* Disponible en variables */}
               <Card className="card-base">
                 <CardContent className="p-4">
-                  <p className="text-xs font-medium text-muted-foreground mb-1">Disponible</p>
+                  <p className="text-xs font-medium text-muted-foreground mb-1">Variables restante</p>
                   <p
                     className={cn(
                       "text-lg font-bold tabular-nums leading-tight",
@@ -498,7 +478,7 @@ export default function DashboardPage() {
                   >
                     {formatCurrency(s.available_to_spend, currency)}
                   </p>
-                  <p className="text-xs text-muted-foreground mt-2">para gastar</p>
+                  <p className="text-xs text-muted-foreground mt-2">del presupuesto variable</p>
                 </CardContent>
               </Card>
             </>

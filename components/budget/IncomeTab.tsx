@@ -29,7 +29,7 @@ import {
 
 type SheetSection = "income" | "income-variable"
 
-export function IncomeTab() {
+export function IncomeTab({ currency = "COP" }: { currency?: string }) {
   const { items: fixedIncomes, isLoading: loadingFixed, hasMore: hasMoreFixed, onLoadMore: loadMoreFixed, isFetching: fetchingFixed } = useIncomes()
   const { items: variableIncomes, isLoading: loadingVariable, hasMore: hasMoreVariable, onLoadMore: loadMoreVariable, isFetching: fetchingVariable } = useIncomeVariable()
 
@@ -118,7 +118,7 @@ export function IncomeTab() {
                 <h3 className="text-lg font-bold">Ingresos Fijos</h3>
                 <p className="text-sm text-muted-foreground">Recurrentes (salario, arriendo)</p>
               </div>
-              <p className="text-xl font-bold">{formatCurrency(totalFixed)}</p>
+              <p className="text-xl font-bold">{formatCurrency(totalFixed, currency)}</p>
             </div>
           </AccordionTrigger>
           <AccordionContent className="pt-2 pb-6 space-y-4">
@@ -133,6 +133,7 @@ export function IncomeTab() {
                 <IncomeItem
                   key={income.id}
                   item={income}
+                  currency={currency}
                   showDay
                   onEdit={() => handleEdit(income, "income")}
                   onDelete={() => setDeletingItem({ id: income.id, section: "income" })}
@@ -158,7 +159,7 @@ export function IncomeTab() {
                 <h3 className="text-lg font-bold">Ingresos Variables</h3>
                 <p className="text-sm text-muted-foreground">Ocasionales (freelance, ventas)</p>
               </div>
-              <p className="text-xl font-bold">{formatCurrency(totalVariable)}</p>
+              <p className="text-xl font-bold">{formatCurrency(totalVariable, currency)}</p>
             </div>
           </AccordionTrigger>
           <AccordionContent className="pt-2 pb-6 space-y-4">
@@ -173,6 +174,7 @@ export function IncomeTab() {
                 <IncomeItem
                   key={income.id}
                   item={income}
+                  currency={currency}
                   onEdit={() => handleEdit(income, "income-variable")}
                   onDelete={() => setDeletingItem({ id: income.id, section: "income-variable" })}
                 />
@@ -221,11 +223,13 @@ export function IncomeTab() {
 
 function IncomeItem({
   item,
+  currency,
   showDay,
   onEdit,
   onDelete,
 }: {
   item: any
+  currency: string
   showDay?: boolean
   onEdit: () => void
   onDelete: () => void
@@ -243,7 +247,7 @@ function IncomeItem({
         </div>
       </div>
       <div className="flex items-center gap-4">
-        <p className="font-semibold">{formatCurrency(item.amount, item.currency)}</p>
+        <p className="font-semibold">{formatCurrency(item.amount, item.currency ?? currency)}</p>
         <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onEdit}>
             <Edit2 size={14} className="text-muted-foreground" />

@@ -56,11 +56,11 @@ export default function BudgetPage() {
             </TabsContent>
 
             <TabsContent value="income" className="mt-0">
-              {mounted.has("income") && <IncomeTab />}
+              {mounted.has("income") && <IncomeTab currency={currency} />}
             </TabsContent>
 
             <TabsContent value="expenses" className="mt-0">
-              {mounted.has("expenses") && <ExpensesTab />}
+              {mounted.has("expenses") && <ExpensesTab currency={currency} />}
             </TabsContent>
 
             <TabsContent value="plan" className="mt-0">
