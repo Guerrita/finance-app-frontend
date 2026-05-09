@@ -24,7 +24,7 @@ export interface Transaction {
   amount: number
   description: string
   category: string
-  date: string
+  date: number
   currency: string
   expense_id?: string
   income_id?: string
@@ -91,9 +91,9 @@ export interface Expense {
 }
 
 // Goal
-export type GoalType = 
-  | "travel" | "emergency" | "investment" | "housing" | "vehicle" 
-  | "education" | "wedding" | "business" | "retirement" | "health" 
+export type GoalType =
+  | "travel" | "emergency" | "investment" | "housing" | "vehicle"
+  | "education" | "wedding" | "business" | "retirement" | "health"
   | "electronics" | "celebration" | "debt_payoff" | "furniture" | "pet" | "other"
 
 export type ContributionType =
@@ -110,9 +110,56 @@ export interface Contribution {
   id: string
   amount: number
   type: ContributionType
-  date: string
+  date: number
   notes?: string
   created_at: number
+}
+
+export interface GoalContribution {
+  contrib_id: string
+  goal_id: string
+  month: string
+  date: number
+  amount: number
+  transaction_type: string
+  contribution_type: string
+  notes?: string
+  total_saved: number
+  created_at: number
+  updated_at: number
+}
+
+export interface GoalContributionsResponse {
+  goal_id: string
+  contributions: Omit<GoalContribution, "goal_id" | "total_saved">[]
+  total: number
+}
+
+export interface SinkingFundContribution {
+  contrib_id: string
+  month: string
+  date: number
+  amount: number
+  notes?: string
+  created_at: number
+  updated_at: number
+}
+
+export interface SinkingFundContributionsResponse {
+  contributions: SinkingFundContribution[]
+  total: number
+}
+
+export interface GoalHistoryEntry {
+  contrib_id: string
+  month: string
+  date: number
+  amount: number
+  transaction_type: string
+  contribution_type: string
+  total_saved: number
+  percentage: number
+  notes?: string
 }
 
 export interface Goal {
@@ -125,16 +172,19 @@ export interface Goal {
   current_saved: number
   currency: string
   status: "active" | "completed" | "paused"
-  progress_percentage: number
+  progress_percentage?: number
+  progress?: number
   created_at: number
 }
 
 export interface GoalProgress {
-  progress_percentage: number
+  progress_percentage?: number
+  progress?: number
   current_saved: number
   months_remaining: number
   on_track: boolean
   projected_completion_date: string
+  monthly_history?: GoalHistoryEntry[]
 }
 
 // SinkingFund
@@ -145,7 +195,7 @@ export interface SinkingFund {
   name: string
   description?: string
   expected_amount: number
-  expected_date: string
+  expected_date: number
   monthly_contribution: number
   current_saved: number
   currency: string
@@ -186,7 +236,8 @@ export interface DashboardGoal {
   type: string
   current_saved: number
   target_amount: number
-  progress_percentage: number
+  progress_percentage?: number
+  progress?: number
   monthly_contribution: number
 }
 
@@ -222,12 +273,15 @@ export interface DashboardAlert {
   category: string
   message: string
   action: string
+  type?: string
+  amount_over?: number
 }
 
 export interface DashboardRecommendation {
   type: string
   message: string
   potential_savings?: number
+  suggested_amount?: number
 }
 
 export interface DashboardData {
@@ -324,7 +378,8 @@ export interface YtdTopExpenseCategory {
 export interface YtdGoalProgress {
   name: string
   type: string
-  progress_percentage: number
+  progress_percentage?: number
+  progress?: number
   current_saved: number
   target_amount: number
 }

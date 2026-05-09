@@ -7,6 +7,7 @@ import { Pencil, Trash2, Loader2 } from "lucide-react"
 import { CurrencyDisplay } from "@/components/shared/CurrencyDisplay"
 import { useCategories } from "@/lib/api/endpoints/categories"
 import { Button } from "@/components/ui/button"
+import { safeParseDate } from "@/lib/utils/format"
 
 interface TransactionListProps {
   transactions: Transaction[]
@@ -30,14 +31,19 @@ export function TransactionList({
   const groupTransactionsByDate = (txs: Transaction[]) => {
     const groups: Record<string, Transaction[]> = {}
     txs.forEach((tx) => {
-      if (!groups[tx.date]) groups[tx.date] = []
-      groups[tx.date].push(tx)
+      // Normalize date for grouping (string key)
+      const dateKey = typeof tx.date === "number" 
+        ? format(safeParseDate(tx.date), "yyyy-MM-dd")
+        : tx.date
+      
+      if (!groups[dateKey]) groups[dateKey] = []
+      groups[dateKey].push(tx)
     })
     return Object.entries(groups).sort((a, b) => b[0].localeCompare(a[0]))
   }
 
   const formatDateLabel = (dateStr: string) => {
-    const date = parseISO(dateStr)
+    const date = safeParseDate(dateStr)
     if (isToday(date)) return "Hoy"
     if (isYesterday(date)) return "Ayer"
     return format(date, "d 'de' MMMM", { locale: es })

@@ -37,7 +37,7 @@ export function GoalCard({
   // The prompt says "chip 'En camino' (verde) o 'Atrasado' (rojo)"
   // We'll assume "on track" if current progress >= expected progress (time passed / total time)
   // But for now let's just use the active status or a simple heuristic
-  const isOnTrack = goal.progress_percentage >= 50 // Mocking heuristic or should use backend data
+  const isOnTrack = (goal.progress ?? goal.progress_percentage ?? 0) >= 50 // Mocking heuristic or should use backend data
 
   return (
     <Card className="overflow-hidden border-slate-100 hover:shadow-md transition-shadow">
@@ -68,10 +68,10 @@ export function GoalCard({
           <div className="flex justify-between items-end mb-2">
             <span className="text-xs text-slate-500 font-medium">Ahorrado</span>
             <span className="text-xs font-bold text-slate-700">
-              {goal.progress_percentage}%
+              {goal.progress ?? goal.progress_percentage ?? 0}%
             </span>
           </div>
-          <Progress value={goal.progress_percentage} className="h-2" />
+          <Progress value={goal.progress ?? goal.progress_percentage ?? 0} className="h-2" />
         </div>
 
         <div className="grid grid-cols-2 gap-4 mb-4">

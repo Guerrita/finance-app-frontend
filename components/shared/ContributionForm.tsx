@@ -24,19 +24,36 @@ import { Input } from "@/components/ui/input"
 import { AmountInput } from "@/components/shared/AmountInput"
 import { ContributionType } from "@/types/api"
 
-const contributionSchema = z.object({
+const goalContributionSchema = z.object({
   amount: z.number().min(0.01, "El monto debe ser mayor a 0"),
-  type: z.string().min(1, "Selecciona un tipo"),
+  contribution_type: z.string().min(1, "Selecciona un tipo"),
   date: z.string().min(1, "Selecciona una fecha"),
   notes: z.string().optional(),
 })
 
-type ContributionFormValues = z.infer<typeof contributionSchema>
+const sinkingFundContributionSchema = z.object({
+  amount: z.number().min(0.01, "El monto debe ser mayor a 0"),
+  date: z.string().min(1, "Selecciona una fecha"),
+  notes: z.string().optional(),
+})
+
+export type GoalContributionFormValues = z.infer<typeof goalContributionSchema>
+export type SinkingFundContributionFormValues = z.infer<typeof sinkingFundContributionSchema>
+
+export type ContributionFormValues = GoalContributionFormValues | SinkingFundContributionFormValues
 
 interface ContributionFormProps {
   onSubmit: (values: ContributionFormValues) => void
+  onCancel?: () => void
   isSubmitting?: boolean
   defaultCurrency?: string
+  variant?: "goal" | "sinking-fund"
+  initialValues?: {
+    amount: number
+    contribution_type?: string
+    date: string
+    notes?: string
+  }
 }
 
 const CONTRIBUTION_TYPES: { value: ContributionType; label: string }[] = [
@@ -51,14 +68,20 @@ const CONTRIBUTION_TYPES: { value: ContributionType; label: string }[] = [
 
 export function ContributionForm({
   onSubmit,
+  onCancel,
   isSubmitting,
   defaultCurrency = "COP",
+  variant = "goal",
+  initialValues,
 }: ContributionFormProps) {
+  const isEdit = !!initialValues
+  const schema = variant === "goal" ? goalContributionSchema : sinkingFundContributionSchema
+
   const form = useForm<ContributionFormValues>({
-    resolver: zodResolver(contributionSchema),
-    defaultValues: {
+    resolver: zodResolver(schema),
+    defaultValues: initialValues ?? {
       amount: 0,
-      type: "regular",
+      ...(variant === "goal" ? { contribution_type: "regular" } : {}),
       date: format(new Date(), "yyyy-MM-dd"),
       notes: "",
     },
@@ -85,30 +108,32 @@ export function ContributionForm({
           )}
         />
 
-        <FormField
-          control={form.control}
-          name="type"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Tipo de contribución</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecciona un tipo" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {CONTRIBUTION_TYPES.map((type) => (
-                    <SelectItem key={type.value} value={type.value}>
-                      {type.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        {variant === "goal" && (
+          <FormField
+            control={form.control}
+            name="contribution_type"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Tipo de contribución</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value as string}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecciona un tipo" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {CONTRIBUTION_TYPES.map((type) => (
+                      <SelectItem key={type.value} value={type.value}>
+                        {type.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
 
         <FormField
           control={form.control}
@@ -138,9 +163,14 @@ export function ContributionForm({
           )}
         />
 
-        <div className="pt-4">
-          <Button type="submit" className="w-full" disabled={isSubmitting}>
-            {isSubmitting ? "Guardando..." : "Añadir contribución"}
+        <div className="pt-4 flex gap-2">
+          {onCancel && (
+            <Button type="button" variant="ghost" className="flex-1" onClick={onCancel}>
+              Cancelar
+            </Button>
+          )}
+          <Button type="submit" className="flex-1" disabled={isSubmitting}>
+            {isSubmitting ? "Guardando..." : isEdit ? "Actualizar" : "Añadir contribución"}
           </Button>
         </div>
       </form>

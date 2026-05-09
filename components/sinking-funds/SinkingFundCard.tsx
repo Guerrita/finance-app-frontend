@@ -10,9 +10,10 @@ import {
   Plus, Pencil, Trash2, Calendar, 
   RefreshCw, Wallet 
 } from "lucide-react"
-import { format, parseISO, differenceInDays } from "date-fns"
+import { format, differenceInDays } from "date-fns"
 import { es } from "date-fns/locale"
 import { cn } from "@/lib/utils"
+import { safeParseDate } from "@/lib/utils/format"
 
 interface SinkingFundCardProps {
   fund: SinkingFund
@@ -34,7 +35,7 @@ export function SinkingFundCard({
   onEdit, 
   onDelete 
 }: SinkingFundCardProps) {
-  const targetDate = fund.expected_date ? parseISO(fund.expected_date) : new Date()
+  const targetDate = safeParseDate(fund.expected_date)
   const daysRemaining = differenceInDays(targetDate, new Date())
   const progressPercentage = Math.min(100, Math.round((fund.current_saved / fund.expected_amount) * 100))
   

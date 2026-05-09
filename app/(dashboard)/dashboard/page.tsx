@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { parseISO, format } from "date-fns"
+import { parseISO, format, fromUnixTime } from "date-fns"
 import { es } from "date-fns/locale"
 import { useQueryClient } from "@tanstack/react-query"
 import {
@@ -37,7 +37,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { formatCurrency, formatMonth } from "@/lib/utils/format"
+import { formatCurrency, formatMonth, safeParseDate } from "@/lib/utils/format"
 import { getCategoryIcon } from "@/lib/utils/categories"
 import { QUERY_KEYS, ROUTES } from "@/lib/utils/constants"
 import { cn } from "@/lib/utils"
@@ -49,11 +49,11 @@ import type {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function formatTxDate(dateStr: string): string {
+function formatTxDate(dateStr: string | number): string {
   try {
-    return format(parseISO(dateStr), "d MMM", { locale: es })
+    return format(safeParseDate(dateStr), "d MMM", { locale: es })
   } catch {
-    return dateStr
+    return String(dateStr)
   }
 }
 
@@ -93,7 +93,7 @@ function CircularRing({ value, size = 48 }: { value: number; size?: number }) {
         />
       </svg>
       <span className="absolute inset-0 flex items-center justify-center text-2xs font-bold text-foreground">
-        {Math.round(value)}%
+        {Math.round(pct)}%
       </span>
     </div>
   )
@@ -219,7 +219,9 @@ function ExpensesByCategory({
   categories: DashboardCategoryExpense[]
   currency: string
 }) {
-  const sorted = [...categories].sort((a, b) => b.progress - a.progress)
+  const computeProgress = (cat: DashboardCategoryExpense) =>
+    cat.planned > 0 ? (cat.actual / cat.planned) * 100 : 0
+  const sorted = [...categories].sort((a, b) => computeProgress(b) - computeProgress(a))
   return (
     <Card className="card-base">
       <div className="px-4 pt-4 pb-2 border-b border-border/50">
@@ -233,7 +235,8 @@ function ExpensesByCategory({
         ) : (
           <div className="space-y-4">
             {sorted.map((cat) => {
-              const chip = statusChip(cat.progress)
+              const progress = cat.planned > 0 ? (cat.actual / cat.planned) * 100 : 0
+              const chip = statusChip(progress)
               return (
                 <div key={cat.category} className="flex items-center gap-3">
                   <span className="text-xl shrink-0">{getCategoryIcon(cat.category)}</span>
@@ -249,7 +252,7 @@ function ExpensesByCategory({
                         {chip.label}
                       </span>
                     </div>
-                    <Progress value={Math.min(cat.progress, 100)} className="h-1.5" />
+                    <Progress value={Math.min(progress, 100)} className="h-1.5" />
                   </div>
                   <div className="text-right shrink-0 ml-2">
                     <p className="text-xs font-semibold tabular-nums">
@@ -668,18 +671,21 @@ export default function DashboardPage() {
                     </p>
                   ) : (
                     <div className="space-y-3">
-                      {data.goals_summary.goals.slice(0, 3).map((goal) => (
-                        <div key={goal.id} className="flex items-center gap-3">
-                          <CircularRing value={goal.progress_percentage} />
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium truncate">{goal.name}</p>
-                            <p className="text-xs text-muted-foreground tabular-nums">
-                              {formatCurrency(goal.current_saved, currency)} /{" "}
-                              {formatCurrency(goal.target_amount, currency)}
-                            </p>
+                      {data.goals_summary.goals
+                        .filter((g) => g.name && !g.id.includes("#CONTRIB#"))
+                        .slice(0, 3)
+                        .map((goal) => (
+                          <div key={goal.id} className="flex items-center gap-3">
+                            <CircularRing value={goal.progress ?? goal.progress_percentage ?? 0} />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium truncate">{goal.name}</p>
+                              <p className="text-xs text-muted-foreground tabular-nums">
+                                {formatCurrency(goal.current_saved, currency)} /{" "}
+                                {formatCurrency(goal.target_amount, currency)}
+                              </p>
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        ))}
                       <Link
                         href={ROUTES.goals}
                         className="block text-center text-xs text-brand-600 hover:underline underline-offset-2 pt-1 [min-height:unset] [min-width:unset]"

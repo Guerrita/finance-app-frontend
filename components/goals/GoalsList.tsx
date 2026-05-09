@@ -7,10 +7,14 @@ import {
   useUpdateGoal,
   useDeleteGoal,
   useAddGoalContribution,
+  useGoalContributions,
+  useUpdateGoalContribution,
+  useDeleteGoalContribution,
 } from "@/lib/api/endpoints/goals"
 import { GoalCard } from "@/components/goals/GoalCard"
 import { GoalForm, GoalFormValues } from "@/components/goals/GoalForm"
-import { ContributionForm } from "@/components/shared/ContributionForm"
+import { ContributionForm, GoalContributionFormValues } from "@/components/shared/ContributionForm"
+import { ContributionHistory, ContributionHistoryItem } from "@/components/shared/ContributionHistory"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { LoadingSpinner } from "@/components/shared/LoadingSpinner"
 import { ErrorState } from "@/components/shared/ErrorState"
@@ -45,11 +49,31 @@ export function GoalsList() {
   const updateGoal = useUpdateGoal()
   const deleteGoal = useDeleteGoal()
   const addContribution = useAddGoalContribution()
+  const updateContribution = useUpdateGoalContribution()
+  const deleteContribution = useDeleteGoalContribution()
 
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [isContributionOpen, setIsContributionOpen] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null)
+  const [editingContribId, setEditingContribId] = useState<string | null>(null)
+  const [deletingContribId, setDeletingContribId] = useState<string | null>(null)
+
+  const { data: contributionsData, isLoading: isLoadingContribs } = useGoalContributions(
+    selectedGoal?.id ?? "",
+    isContributionOpen,
+  )
+
+  const contributions: ContributionHistoryItem[] = (contributionsData?.contributions ?? []).map((c) => ({
+    contrib_id: c.contrib_id,
+    date: c.date,
+    amount: c.amount,
+    notes: c.notes,
+    contribution_type: c.contribution_type,
+    month: c.month,
+  }))
+
+  const editingContrib = contributions.find((c) => c.contrib_id === editingContribId)
 
   if (isLoading) return <LoadingSpinner />
   if (error) return <ErrorState message={error.message} />
@@ -87,15 +111,50 @@ export function GoalsList() {
     }
   }
 
-  const handleAddContribution = async (values: any) => {
+  const handleAddContribution = async (values: GoalContributionFormValues) => {
     if (!selectedGoal) return
     try {
-      await addContribution.mutateAsync({ id: selectedGoal.id, dto: values })
+      await addContribution.mutateAsync({
+        id: selectedGoal.id,
+        dto: { ...values, transaction_type: "deposit" },
+      })
       toast.success("Contribución añadida correctamente")
-      setIsContributionOpen(false)
-      setSelectedGoal(null)
     } catch (e: any) {
       toast.error(e.message || "Error al añadir contribución")
+    }
+  }
+
+  const handleUpdateContribution = async (values: GoalContributionFormValues) => {
+    if (!selectedGoal || !editingContribId) return
+    try {
+      await updateContribution.mutateAsync({
+        id: selectedGoal.id,
+        contrib_id: editingContribId,
+        dto: { ...values, transaction_type: "deposit" },
+      })
+      toast.success("Contribución actualizada")
+      setEditingContribId(null)
+    } catch (e: any) {
+      toast.error(e.message || "Error al actualizar la contribución")
+    }
+  }
+
+  const handleDeleteContribution = async () => {
+    if (!selectedGoal || !deletingContribId) return
+    try {
+      await deleteContribution.mutateAsync({ id: selectedGoal.id, contrib_id: deletingContribId })
+      toast.success("Contribución eliminada")
+      setDeletingContribId(null)
+    } catch (e: any) {
+      toast.error(e.message || "Error al eliminar la contribución")
+    }
+  }
+
+  const handleCloseContributionSheet = (open: boolean) => {
+    setIsContributionOpen(open)
+    if (!open) {
+      setEditingContribId(null)
+      setDeletingContribId(null)
     }
   }
 
@@ -212,24 +271,93 @@ export function GoalsList() {
         </SheetContent>
       </Sheet>
 
-      {/* Contribution Form Sheet */}
-      <Sheet open={isContributionOpen} onOpenChange={setIsContributionOpen}>
-        <SheetContent className="sm:max-w-md">
-          <SheetHeader className="mb-6">
-            <SheetTitle>Añadir Contribución</SheetTitle>
+      {/* Contribution Sheet — history + add/edit form */}
+      <Sheet open={isContributionOpen} onOpenChange={handleCloseContributionSheet}>
+        <SheetContent className="sm:max-w-md overflow-y-auto flex flex-col gap-6">
+          <SheetHeader>
+            <SheetTitle>
+              {editingContribId ? "Editar Contribución" : "Contribuciones"}
+            </SheetTitle>
             <SheetDescription>
-              Añade un ahorro a la meta: <span className="font-bold text-slate-700">{selectedGoal?.name}</span>
+              {selectedGoal?.name}
             </SheetDescription>
           </SheetHeader>
-          <ContributionForm
-            onSubmit={handleAddContribution}
-            isSubmitting={addContribution.isPending}
-            defaultCurrency={selectedGoal?.currency}
-          />
+
+          {!editingContribId && (
+            <>
+              <div>
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">
+                  Historial
+                </p>
+                <ContributionHistory
+                  items={contributions}
+                  currency={selectedGoal?.currency ?? "COP"}
+                  isLoading={isLoadingContribs}
+                  onEdit={(contrib_id) => setEditingContribId(contrib_id)}
+                  onDelete={(contrib_id) => setDeletingContribId(contrib_id)}
+                />
+              </div>
+
+              <div>
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">
+                  Nueva contribución
+                </p>
+                <ContributionForm
+                  key="new"
+                  onSubmit={handleAddContribution as any}
+                  isSubmitting={addContribution.isPending}
+                  defaultCurrency={selectedGoal?.currency}
+                  variant="goal"
+                />
+              </div>
+            </>
+          )}
+
+          {editingContribId && editingContrib && (
+            <ContributionForm
+              key={editingContribId}
+              onSubmit={handleUpdateContribution as any}
+              onCancel={() => setEditingContribId(null)}
+              isSubmitting={updateContribution.isPending}
+              defaultCurrency={selectedGoal?.currency}
+              variant="goal"
+              initialValues={{
+                amount: editingContrib.amount,
+                contribution_type: editingContrib.contribution_type,
+                date: editingContrib.date,
+                notes: editingContrib.notes,
+              }}
+            />
+          )}
         </SheetContent>
       </Sheet>
 
-      {/* Delete Confirmation Dialog */}
+      {/* Delete Contribution Dialog */}
+      <Dialog
+        open={!!deletingContribId}
+        onOpenChange={(open) => { if (!open) setDeletingContribId(null) }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>¿Eliminar contribución?</DialogTitle>
+            <DialogDescription>
+              Esta acción no se puede deshacer.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="ghost" onClick={() => setDeletingContribId(null)}>Cancelar</Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteContribution}
+              disabled={deleteContribution.isPending}
+            >
+              {deleteContribution.isPending ? "Eliminando..." : "Eliminar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Goal Confirmation Dialog */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>

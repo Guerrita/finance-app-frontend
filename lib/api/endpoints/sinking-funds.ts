@@ -1,6 +1,11 @@
 import { apiClient } from "@/lib/api/client"
-import type { ApiResponse, SinkingFund } from "@/types/api"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
+import type {
+  ApiResponse,
+  SinkingFund,
+  SinkingFundContribution,
+  SinkingFundContributionsResponse,
+} from "@/types/api"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { usePaginated } from "@/lib/hooks/usePaginated"
 import { QUERY_KEYS } from "@/lib/utils/constants"
 
@@ -16,10 +21,15 @@ export interface CreateSinkingFundDto {
   recurrence: "one-time" | "monthly" | "quarterly" | "yearly"
 }
 
-export interface ContributionDto {
+export interface SinkingFundContributionDto {
   amount: number
-  type: string
   date: string
+  notes?: string
+}
+
+export interface UpdateSinkingFundContributionDto {
+  amount?: number
+  date?: string
   notes?: string
 }
 
@@ -54,8 +64,45 @@ export const sinkingFundsApi = {
     return data.data
   },
 
-  addContribution: async ({ id, dto }: { id: string; dto: ContributionDto }) => {
-    const { data } = await apiClient.post<ApiResponse<SinkingFund>>(`/sinking-funds/${id}/contributions`, dto)
+  addContribution: async ({ id, dto }: { id: string; dto: SinkingFundContributionDto }) => {
+    const { data } = await apiClient.post<ApiResponse<SinkingFundContribution>>(
+      `/sinking-funds/${id}/contributions`,
+      dto,
+    )
+    if (!data.success) throw new Error(data.error.message)
+    return data.data
+  },
+
+  getContributions: async ({ id, month }: { id: string; month?: string }) => {
+    const params = month ? `?month=${month}` : ""
+    const { data } = await apiClient.get<ApiResponse<SinkingFundContributionsResponse>>(
+      `/sinking-funds/${id}/contributions${params}`,
+    )
+    if (!data.success) throw new Error(data.error.message)
+    return data.data
+  },
+
+  updateContribution: async ({
+    id,
+    contrib_id,
+    dto,
+  }: {
+    id: string
+    contrib_id: string
+    dto: UpdateSinkingFundContributionDto
+  }) => {
+    const { data } = await apiClient.put<ApiResponse<SinkingFundContribution>>(
+      `/sinking-funds/${id}/contributions/${contrib_id}`,
+      dto,
+    )
+    if (!data.success) throw new Error(data.error.message)
+    return data.data
+  },
+
+  deleteContribution: async ({ id, contrib_id }: { id: string; contrib_id: string }) => {
+    const { data } = await apiClient.delete<ApiResponse<void>>(
+      `/sinking-funds/${id}/contributions/${contrib_id}`,
+    )
     if (!data.success) throw new Error(data.error.message)
     return data.data
   },
@@ -67,6 +114,14 @@ export const useSinkingFunds = () => {
     url: "/sinking-funds",
     dataKey: "funds",
     pageSize: 12,
+  })
+}
+
+export const useSinkingFundContributions = (id: string, enabled: boolean = true) => {
+  return useQuery({
+    queryKey: QUERY_KEYS.sinkingFundContributions(id),
+    queryFn: () => sinkingFundsApi.getContributions({ id }),
+    enabled: !!id && enabled,
   })
 }
 
@@ -108,6 +163,31 @@ export const useAddSinkingFundContribution = () => {
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.sinkingFunds() })
       queryClient.invalidateQueries({ queryKey: ["sinking-funds", id] })
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.sinkingFundContributions(id) })
+    },
+  })
+}
+
+export const useUpdateSinkingFundContribution = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: sinkingFundsApi.updateContribution,
+    onSuccess: (_, { id }) => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.sinkingFunds() })
+      queryClient.invalidateQueries({ queryKey: ["sinking-funds", id] })
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.sinkingFundContributions(id) })
+    },
+  })
+}
+
+export const useDeleteSinkingFundContribution = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: sinkingFundsApi.deleteContribution,
+    onSuccess: (_, { id }) => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.sinkingFunds() })
+      queryClient.invalidateQueries({ queryKey: ["sinking-funds", id] })
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.sinkingFundContributions(id) })
     },
   })
 }

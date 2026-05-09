@@ -1,5 +1,11 @@
 import { apiClient } from "@/lib/api/client"
-import type { ApiResponse, Goal, GoalProgress } from "@/types/api"
+import type {
+  ApiResponse,
+  Goal,
+  GoalProgress,
+  GoalContribution,
+  GoalContributionsResponse,
+} from "@/types/api"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { usePaginated } from "@/lib/hooks/usePaginated"
 import { QUERY_KEYS } from "@/lib/utils/constants"
@@ -14,10 +20,19 @@ export interface CreateGoalDto {
   currency?: string
 }
 
-export interface ContributionDto {
+export interface GoalContributionDto {
   amount: number
-  type: string
+  contribution_type?: string
+  transaction_type?: string
   date: string
+  notes?: string
+}
+
+export interface UpdateGoalContributionDto {
+  amount?: number
+  contribution_type?: string
+  transaction_type?: string
+  date?: string
   notes?: string
 }
 
@@ -52,8 +67,45 @@ export const goalsApi = {
     return data.data
   },
 
-  addContribution: async ({ id, dto }: { id: string; dto: ContributionDto }) => {
-    const { data } = await apiClient.post<ApiResponse<Goal>>(`/goals/${id}/contributions`, dto)
+  addContribution: async ({ id, dto }: { id: string; dto: GoalContributionDto }) => {
+    const { data } = await apiClient.post<ApiResponse<GoalContribution>>(
+      `/goals/${id}/contributions`,
+      dto,
+    )
+    if (!data.success) throw new Error(data.error.message)
+    return data.data
+  },
+
+  getContributions: async ({ id, month }: { id: string; month?: string }) => {
+    const params = month ? `?month=${month}` : ""
+    const { data } = await apiClient.get<ApiResponse<GoalContributionsResponse>>(
+      `/goals/${id}/contributions${params}`,
+    )
+    if (!data.success) throw new Error(data.error.message)
+    return data.data
+  },
+
+  updateContribution: async ({
+    id,
+    contrib_id,
+    dto,
+  }: {
+    id: string
+    contrib_id: string
+    dto: UpdateGoalContributionDto
+  }) => {
+    const { data } = await apiClient.put<ApiResponse<GoalContribution>>(
+      `/goals/${id}/contributions/${contrib_id}`,
+      dto,
+    )
+    if (!data.success) throw new Error(data.error.message)
+    return data.data
+  },
+
+  deleteContribution: async ({ id, contrib_id }: { id: string; contrib_id: string }) => {
+    const { data } = await apiClient.delete<ApiResponse<void>>(
+      `/goals/${id}/contributions/${contrib_id}`,
+    )
     if (!data.success) throw new Error(data.error.message)
     return data.data
   },
@@ -78,6 +130,14 @@ export const useGoalProgress = (id: string, enabled: boolean = true) => {
   return useQuery({
     queryKey: ["goals", id, "progress"],
     queryFn: () => goalsApi.getProgress(id),
+    enabled: !!id && enabled,
+  })
+}
+
+export const useGoalContributions = (id: string, enabled: boolean = true) => {
+  return useQuery({
+    queryKey: QUERY_KEYS.goalContributions(id),
+    queryFn: () => goalsApi.getContributions({ id }),
     enabled: !!id && enabled,
   })
 }
@@ -121,6 +181,33 @@ export const useAddGoalContribution = () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.goals() })
       queryClient.invalidateQueries({ queryKey: ["goals", id] })
       queryClient.invalidateQueries({ queryKey: ["goals", id, "progress"] })
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.goalContributions(id) })
+    },
+  })
+}
+
+export const useUpdateGoalContribution = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: goalsApi.updateContribution,
+    onSuccess: (_, { id }) => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.goals() })
+      queryClient.invalidateQueries({ queryKey: ["goals", id] })
+      queryClient.invalidateQueries({ queryKey: ["goals", id, "progress"] })
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.goalContributions(id) })
+    },
+  })
+}
+
+export const useDeleteGoalContribution = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: goalsApi.deleteContribution,
+    onSuccess: (_, { id }) => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.goals() })
+      queryClient.invalidateQueries({ queryKey: ["goals", id] })
+      queryClient.invalidateQueries({ queryKey: ["goals", id, "progress"] })
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.goalContributions(id) })
     },
   })
 }

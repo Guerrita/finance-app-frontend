@@ -273,10 +273,10 @@ export function YtdReportTab() {
                       <p className="text-xs text-slate-400 mt-0.5 capitalize">{goal.type}</p>
                     </div>
                     <span className="text-sm font-bold text-brand-600 tabular-nums ml-2">
-                      {goal.progress_percentage.toFixed(0)}%
+                      {(goal.progress ?? goal.progress_percentage ?? 0).toFixed(0)}%
                     </span>
                   </div>
-                  <Progress value={Math.min(goal.progress_percentage, 100)} className="h-2 mb-2" />
+                  <Progress value={Math.min(goal.progress ?? goal.progress_percentage ?? 0, 100)} className="h-2 mb-2" />
                   <div className="flex justify-between text-xs text-slate-500 tabular-nums">
                     <span>{formatCurrency(goal.current_saved)}</span>
                     <span>{formatCurrency(goal.target_amount)}</span>

@@ -67,6 +67,7 @@ export function ForgotPasswordForm({ initialEmail = '' }: ForgotPasswordFormProp
 
   async function onStep2({ code, newPassword }: Step2Values) {
     setServerError('')
+    console.log('[ForgotPassword] Resetting password for:', { email, code, newPassword })
     try {
       const res = await authApi.resetPassword(email, code, newPassword)
       const payload = res.data

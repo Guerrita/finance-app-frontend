@@ -17,16 +17,16 @@ import {
   Accordion, AccordionItem, AccordionTrigger, AccordionContent,
 } from "@/components/ui/accordion"
 import { Button } from "@/components/ui/button"
-import { formatCurrency } from "@/lib/utils/format"
+import { formatCurrency, safeParseDate } from "@/lib/utils/format"
 import { getCategoryIcon } from "@/lib/utils/categories"
 import { cn } from "@/lib/utils"
 import type { Goal, SinkingFund, IncomePlanSource } from "@/types/api"
 
 const HORIZONS = [3, 6, 12, 24] as const
 
-function formatMonthLabel(month: string): string {
-  const [y, m] = month.split("-")
-  const label = format(new Date(Number(y), Number(m) - 1, 1), "MMM yyyy", { locale: es })
+function formatMonthLabel(month: string | number): string {
+  const date = safeParseDate(month)
+  const label = format(date, "MMM yyyy", { locale: es })
   return label.charAt(0).toUpperCase() + label.slice(1).replace(".", "")
 }
 

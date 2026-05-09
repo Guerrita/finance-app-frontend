@@ -23,7 +23,7 @@ import {
 
 import { useTrends } from "@/lib/api/endpoints/reports"
 import { useAuthStore } from "@/store/auth.store"
-import { formatCurrency } from "@/lib/utils/format"
+import { formatCurrency, safeParseDate } from "@/lib/utils/format"
 import { Card, CardContent } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
@@ -35,11 +35,14 @@ import type { TrendDirection } from "@/types/api"
 const RANGE_OPTIONS = [3, 6, 12, 24] as const
 type Range = typeof RANGE_OPTIONS[number]
 
-function formatMonthShort(monthStr: string): string {
+function formatMonthShort(monthStr: string | number): string {
   try {
-    return format(parseISO(`${monthStr}-01`), "MMM", { locale: es })
+    // If it's a month string like "2024-05", safeParseDate handles it.
+    // If it's a number, it handles it as well.
+    const date = safeParseDate(monthStr)
+    return format(date, "MMM", { locale: es })
   } catch {
-    return monthStr
+    return String(monthStr)
   }
 }
 

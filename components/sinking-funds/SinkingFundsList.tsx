@@ -7,10 +7,14 @@ import {
   useUpdateSinkingFund,
   useDeleteSinkingFund,
   useAddSinkingFundContribution,
+  useSinkingFundContributions,
+  useUpdateSinkingFundContribution,
+  useDeleteSinkingFundContribution,
 } from "@/lib/api/endpoints/sinking-funds"
 import { SinkingFundCard } from "@/components/sinking-funds/SinkingFundCard"
 import { SinkingFundForm, SinkingFundFormValues } from "@/components/sinking-funds/SinkingFundForm"
-import { ContributionForm } from "@/components/shared/ContributionForm"
+import { ContributionForm, SinkingFundContributionFormValues } from "@/components/shared/ContributionForm"
+import { ContributionHistory, ContributionHistoryItem } from "@/components/shared/ContributionHistory"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { LoadingSpinner } from "@/components/shared/LoadingSpinner"
 import { ErrorState } from "@/components/shared/ErrorState"
@@ -35,7 +39,8 @@ import {
 } from "@/components/ui/dialog"
 import { Plus, TrendingUp, Wallet, Landmark } from "lucide-react"
 import { SinkingFund } from "@/types/api"
-import { formatCurrency } from "@/lib/utils/format"
+import { formatCurrency, safeParseDate } from "@/lib/utils/format"
+import { format } from "date-fns"
 import { toast } from "sonner"
 
 export function SinkingFundsList() {
@@ -44,11 +49,30 @@ export function SinkingFundsList() {
   const updateFund = useUpdateSinkingFund()
   const deleteFund = useDeleteSinkingFund()
   const addContribution = useAddSinkingFundContribution()
+  const updateContribution = useUpdateSinkingFundContribution()
+  const deleteContribution = useDeleteSinkingFundContribution()
 
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [isContributionOpen, setIsContributionOpen] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [selectedFund, setSelectedFund] = useState<SinkingFund | null>(null)
+  const [editingContribId, setEditingContribId] = useState<string | null>(null)
+  const [deletingContribId, setDeletingContribId] = useState<string | null>(null)
+
+  const { data: contributionsData, isLoading: isLoadingContribs } = useSinkingFundContributions(
+    selectedFund?.id ?? "",
+    isContributionOpen,
+  )
+
+  const contributions: ContributionHistoryItem[] = (contributionsData?.contributions ?? []).map((c) => ({
+    contrib_id: c.contrib_id,
+    date: c.date,
+    amount: c.amount,
+    notes: c.notes,
+    month: c.month,
+  }))
+
+  const editingContrib = contributions.find((c) => c.contrib_id === editingContribId)
 
   if (isLoading) return <LoadingSpinner />
   if (error) return <ErrorState message={error.message} />
@@ -86,15 +110,47 @@ export function SinkingFundsList() {
     }
   }
 
-  const handleAddContribution = async (values: any) => {
+  const handleAddContribution = async (values: SinkingFundContributionFormValues) => {
     if (!selectedFund) return
     try {
       await addContribution.mutateAsync({ id: selectedFund.id, dto: values })
       toast.success("Contribución añadida correctamente")
-      setIsContributionOpen(false)
-      setSelectedFund(null)
     } catch (e: any) {
       toast.error(e.message || "Error al añadir contribución")
+    }
+  }
+
+  const handleUpdateContribution = async (values: SinkingFundContributionFormValues) => {
+    if (!selectedFund || !editingContribId) return
+    try {
+      await updateContribution.mutateAsync({
+        id: selectedFund.id,
+        contrib_id: editingContribId,
+        dto: values,
+      })
+      toast.success("Contribución actualizada")
+      setEditingContribId(null)
+    } catch (e: any) {
+      toast.error(e.message || "Error al actualizar la contribución")
+    }
+  }
+
+  const handleDeleteContribution = async () => {
+    if (!selectedFund || !deletingContribId) return
+    try {
+      await deleteContribution.mutateAsync({ id: selectedFund.id, contrib_id: deletingContribId })
+      toast.success("Contribución eliminada")
+      setDeletingContribId(null)
+    } catch (e: any) {
+      toast.error(e.message || "Error al eliminar la contribución")
+    }
+  }
+
+  const handleCloseContributionSheet = (open: boolean) => {
+    setIsContributionOpen(open)
+    if (!open) {
+      setEditingContribId(null)
+      setDeletingContribId(null)
     }
   }
 
@@ -203,7 +259,7 @@ export function SinkingFundsList() {
               name: selectedFund.name,
               description: selectedFund.description,
               expected_amount: selectedFund.expected_amount,
-              expected_date: selectedFund.expected_date,
+              expected_date: format(safeParseDate(selectedFund.expected_date), "yyyy-MM-dd"),
               current_saved: selectedFund.current_saved,
               monthly_contribution: selectedFund.monthly_contribution,
               currency: selectedFund.currency,
@@ -213,24 +269,92 @@ export function SinkingFundsList() {
         </SheetContent>
       </Sheet>
 
-      {/* Contribution Form Sheet */}
-      <Sheet open={isContributionOpen} onOpenChange={setIsContributionOpen}>
-        <SheetContent className="sm:max-w-md">
-          <SheetHeader className="mb-6">
-            <SheetTitle>Añadir al Fondo</SheetTitle>
+      {/* Contribution Sheet — history + add/edit form */}
+      <Sheet open={isContributionOpen} onOpenChange={handleCloseContributionSheet}>
+        <SheetContent className="sm:max-w-md overflow-y-auto flex flex-col gap-6">
+          <SheetHeader>
+            <SheetTitle>
+              {editingContribId ? "Editar Contribución" : "Contribuciones"}
+            </SheetTitle>
             <SheetDescription>
-              Añade un ahorro al fondo: <span className="font-bold text-slate-700">{selectedFund?.name}</span>
+              {selectedFund?.name}
             </SheetDescription>
           </SheetHeader>
-          <ContributionForm
-            onSubmit={handleAddContribution}
-            isSubmitting={addContribution.isPending}
-            defaultCurrency={selectedFund?.currency}
-          />
+
+          {!editingContribId && (
+            <>
+              <div>
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">
+                  Historial
+                </p>
+                <ContributionHistory
+                  items={contributions}
+                  currency={selectedFund?.currency ?? "COP"}
+                  isLoading={isLoadingContribs}
+                  onEdit={(contrib_id) => setEditingContribId(contrib_id)}
+                  onDelete={(contrib_id) => setDeletingContribId(contrib_id)}
+                />
+              </div>
+
+              <div>
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">
+                  Nueva contribución
+                </p>
+                <ContributionForm
+                  key="new"
+                  onSubmit={handleAddContribution as any}
+                  isSubmitting={addContribution.isPending}
+                  defaultCurrency={selectedFund?.currency}
+                  variant="sinking-fund"
+                />
+              </div>
+            </>
+          )}
+
+          {editingContribId && editingContrib && (
+            <ContributionForm
+              key={editingContribId}
+              onSubmit={handleUpdateContribution as any}
+              onCancel={() => setEditingContribId(null)}
+              isSubmitting={updateContribution.isPending}
+              defaultCurrency={selectedFund?.currency}
+              variant="sinking-fund"
+              initialValues={{
+                amount: editingContrib.amount,
+                date: editingContrib.date,
+                notes: editingContrib.notes,
+              }}
+            />
+          )}
         </SheetContent>
       </Sheet>
 
-      {/* Delete Confirmation Dialog */}
+      {/* Delete Contribution Dialog */}
+      <Dialog
+        open={!!deletingContribId}
+        onOpenChange={(open) => { if (!open) setDeletingContribId(null) }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>¿Eliminar contribución?</DialogTitle>
+            <DialogDescription>
+              Esta acción no se puede deshacer.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="ghost" onClick={() => setDeletingContribId(null)}>Cancelar</Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteContribution}
+              disabled={deleteContribution.isPending}
+            >
+              {deleteContribution.isPending ? "Eliminando..." : "Eliminar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Fund Confirmation Dialog */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>

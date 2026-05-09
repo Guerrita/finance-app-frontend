@@ -1,5 +1,22 @@
-import { format, fromUnixTime } from "date-fns"
+import { format, fromUnixTime, parseISO, isValid } from "date-fns"
 import { es } from "date-fns/locale"
+
+export function safeParseDate(dateInput: string | number | null | undefined): Date {
+  if (!dateInput) return new Date()
+
+  if (typeof dateInput === "number") {
+    // Assume seconds if < 10^12 (milliseconds), else milliseconds
+    // 10^12 is approximately the year 2001 in milliseconds, so anything less is likely seconds
+    const date = dateInput < 10000000000 ? fromUnixTime(dateInput) : new Date(dateInput)
+    return isValid(date) ? date : new Date()
+  }
+
+  const parsed = parseISO(dateInput)
+  if (isValid(parsed)) return parsed
+
+  const date = new Date(dateInput)
+  return isValid(date) ? date : new Date()
+}
 
 const CURRENCY_DECIMALS: Record<string, number> = {
   COP: 0, CLP: 0, ARS: 0, MXN: 0,
@@ -30,23 +47,25 @@ export function formatDateShort(timestamp: number): string {
   return format(fromUnixTime(timestamp), "dd/MM/yy")
 }
 
-export function formatMonth(month: string): string {
-  const [year, m] = month.split("-")
-  return format(new Date(Number(year), Number(m) - 1, 1), "MMMM yyyy", {
-    locale: es,
-  })
+export function formatMonth(month: string | number): string {
+  const date = safeParseDate(month)
+  return format(date, "MMMM yyyy", { locale: es })
 }
 
 export function getCurrentMonth(): string {
   return format(new Date(), "yyyy-MM")
 }
 
-export function getMonthProgress(month: string): number {
-  const [year, m] = month.split("-").map(Number)
+export function getMonthProgress(month: string | number): number {
+  const date = safeParseDate(month)
+  const year = date.getFullYear()
+  const m = date.getMonth() + 1
   const now = new Date()
+  
   if (now.getFullYear() !== year || now.getMonth() + 1 !== m) {
-    return now > new Date(year, m - 1, 1) ? 100 : 0
+    return now > date ? 100 : 0
   }
+  
   const daysInMonth = new Date(year, m, 0).getDate()
   return Math.round((now.getDate() / daysInMonth) * 100)
 }
