@@ -16,7 +16,7 @@ export const authApi = {
     }),
 
   confirm: (email: string, code: string) =>
-    apiClient.post<ApiResponse<void>>("/auth/confirm", { email, confirmation_code: code }),
+    apiClient.post<ApiResponse<void>>("/auth/confirm", { email, code }),
 
   forgotPassword: (email: string) =>
     apiClient.post<ApiResponse<void>>("/auth/forgot-password", { email }),
