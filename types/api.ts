@@ -355,43 +355,25 @@ export interface MonthlyReport {
 
 // YTD Report
 export interface YtdSummary {
-  total_income: number
-  total_expenses: number
+  total_planned_income: number
+  total_actual_income: number
+  total_planned_expenses: number
+  total_actual_expenses: number
   total_balance: number
-  avg_monthly_income: number
-  avg_monthly_expenses: number
 }
 
-export interface YtdMonthlyBreakdown {
+export interface YtdMonthlyTrend {
   month: string
-  income: number
-  expenses: number
+  actual_income: number
+  actual_expenses: number
   balance: number
-  savings_rate: number
-}
-
-export interface YtdTopExpenseCategory {
-  category: string
-  total: number
-  percentage: number
-}
-
-export interface YtdGoalProgress {
-  name: string
-  type: string
-  progress_percentage?: number
-  progress?: number
-  current_saved: number
-  target_amount: number
 }
 
 export interface YtdReport {
   year: number
-  months_elapsed: number
+  months_included: string[]
   summary: YtdSummary
-  monthly_breakdown: YtdMonthlyBreakdown[]
-  top_expense_categories: YtdTopExpenseCategory[]
-  goals_progress: YtdGoalProgress[]
+  monthly_trend: YtdMonthlyTrend[]
 }
 
 // Plan
@@ -492,11 +474,12 @@ export interface MonthlyTrendPoint {
 
 export interface TrendsData {
   months_analyzed: number;
+  period: { start: string; end: string };
   monthly_data: MonthlyTrendPoint[];
-  averages: { income: number; expenses: number; balance: number; savings_rate: number };
-  trends: { income: TrendDirection; expenses: TrendDirection; balance: TrendDirection };
+  averages: { avg_income: number; avg_expenses: number; avg_balance: number; avg_savings_rate: number };
+  trends: { income_trend: TrendDirection; expenses_trend: TrendDirection; savings_trend: TrendDirection };
   top_categories: Array<{
-    category: string; total: number; percentage: number; trend: TrendDirection;
+    category: string; category_name: string; total_spent: number; avg_monthly: number; percentage_of_total: number;
   }>;
 }
 
